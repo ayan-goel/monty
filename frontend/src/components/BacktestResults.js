@@ -296,7 +296,7 @@ const BacktestResults = () => {
                 <Typography variant="h6">Trade Analysis</Typography>
               </StatHeader>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <StatItem>
                     <Typography className="stat-label">
                       Total Trades
@@ -306,7 +306,7 @@ const BacktestResults = () => {
                     </Typography>
                   </StatItem>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <StatItem>
                     <Typography className="stat-label">
                       Winning Trades
