@@ -326,9 +326,8 @@ const StrategyBuilder = () => {
         <Box sx={{ 
           mt: 2, 
           px: 3, 
-          pb: 3, // Added bottom padding
-          backgroundColor: 'white',
-          borderTop: '1px solid rgba(0, 0, 0, 0.08)'
+          pb: 3,
+          backgroundColor: 'white'
         }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
@@ -457,7 +456,7 @@ const StrategyBuilder = () => {
 
     return (
       <Fade in={true}>
-        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -516,7 +515,7 @@ const StrategyBuilder = () => {
 
     return (
       <Fade in={true}>
-        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -800,7 +799,12 @@ const StrategyBuilder = () => {
                         onChange={() => handleIndicatorChange('ma')}
                       />
                     }
-                    label="Moving Average"
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <ShowChart sx={{ mr: 1 }} />
+                        <Typography>Moving Average</Typography>
+                      </Box>
+                    }
                   />
                 </CardContent>
                 {renderMASettings()}
@@ -815,7 +819,12 @@ const StrategyBuilder = () => {
                         onChange={() => handleIndicatorChange('rsi')}
                       />
                     }
-                    label="Relative Strength Index (RSI)"
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <TrendingUp sx={{ mr: 1 }} />
+                        <Typography>Relative Strength Index (RSI)</Typography>
+                      </Box>
+                    }
                   />
                 </CardContent>
                 {renderRSISettings()}
