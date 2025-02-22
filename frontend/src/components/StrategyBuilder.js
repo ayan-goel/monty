@@ -23,12 +23,18 @@ import {
   IconButton,
   Tooltip,
   Fade,
+  RadioGroup,
+  FormControlLabel as MuiFormControlLabel,
+  Radio,
 } from '@mui/material';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import BarChartIcon from '@mui/icons-material/BarChart';
+import {
+  Timeline,
+  BarChart,
+  ShowChart,
+  Info,
+  TrendingUp,
+  TrendingDown,
+} from '@mui/icons-material';
 
 // Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -156,21 +162,28 @@ const PositionSettingCard = styled(Card)(({ theme }) => ({
   },
 }));
 
+const TradeDirectionCard = styled(Card)(({ theme }) => ({
+  padding: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+  backgroundColor: 'white',
+  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+}));
+
 // Helper Components
 const InfoTooltip = ({ title }) => (
   <Tooltip title={title} arrow placement="top">
     <IconButton size="small" sx={{ ml: 1 }}>
-      <InfoOutlinedIcon fontSize="small" />
+      <Info fontSize="small" />
     </IconButton>
   </Tooltip>
 );
 
 const IndicatorIcon = ({ type }) => {
   const icons = {
-    sma: <ShowChartIcon />,
-    ema: <TimelineIcon />,
-    rsi: <TrendingUpIcon />,
-    bollinger: <BarChartIcon />,
+    sma: <ShowChart />,
+    ema: <Timeline />,
+    rsi: <TrendingUp />,
+    bollinger: <BarChart />,
   };
   return icons[type] || null;
 };
@@ -203,17 +216,34 @@ const StrategyBuilder = () => {
     symbol: '',
     start_date: '',
     end_date: '',
-    indicators: {},
-    position_size: 5,
-    take_profit: 3,
-    stop_loss: 2
+    timeframe: '1d',
+    initial_capital: 10000,
+    entry_conditions: {
+      trade_direction: 'BUY',
+      ma_condition: null,
+      rsi_condition: null
+    },
+    exit_conditions: {
+      stop_loss_pct: 2,
+      take_profit_pct: 4,
+      position_size_pct: 10
+    }
   });
 
   const [indicatorSettings, setIndicatorSettings] = useState({
-    sma: { enabled: false, period: 20, deviation: 1, crossDirection: 'above' },
-    ema: { enabled: false, period: 20, deviation: 1, crossDirection: 'above' },
-    rsi: { enabled: false, period: 14, threshold: 70, condition: 'crosses_above' },
-    bollinger: { enabled: false, period: 20, stdDev: 2, condition: 'crosses_below' }
+    ma: {
+      enabled: false,
+      period: 20,
+      type: 'SMA',
+      comparison: 'CROSS_ABOVE',
+      deviation_pct: 0.5
+    },
+    rsi: {
+      enabled: false,
+      period: 14,
+      comparison: 'ABOVE',
+      value: 70
+    }
   });
 
   const crossDirections = ['above', 'below'];
@@ -266,6 +296,26 @@ const StrategyBuilder = () => {
         }
       }));
     }
+  };
+
+  const handleIndicatorToggle = (indicator) => {
+    setIndicatorSettings({
+      ...indicatorSettings,
+      [indicator]: {
+        ...indicatorSettings[indicator],
+        enabled: !indicatorSettings[indicator].enabled
+      }
+    });
+  };
+
+  const handleIndicatorSettingChange = (indicator, setting, value) => {
+    setIndicatorSettings({
+      ...indicatorSettings,
+      [indicator]: {
+        ...indicatorSettings[indicator],
+        [setting]: value
+      }
+    });
   };
 
   const renderIndicatorSettings = (type) => {
@@ -402,38 +452,142 @@ const StrategyBuilder = () => {
     );
   };
 
+  const renderMASettings = () => {
+    if (!indicatorSettings.ma.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Period"
+                type="number"
+                value={indicatorSettings.ma.period}
+                onChange={(e) => handleIndicatorSettingChange('ma', 'period', parseInt(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Deviation (%)"
+                type="number"
+                value={indicatorSettings.ma.deviation_pct}
+                onChange={(e) => handleIndicatorSettingChange('ma', 'deviation_pct', parseFloat(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>MA Type</InputLabel>
+                <Select
+                  value={indicatorSettings.ma.type}
+                  onChange={(e) => handleIndicatorSettingChange('ma', 'type', e.target.value)}
+                  label="MA Type"
+                >
+                  <MenuItem value="SMA">Simple MA</MenuItem>
+                  <MenuItem value="EMA">Exponential MA</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Comparison</InputLabel>
+                <Select
+                  value={indicatorSettings.ma.comparison}
+                  onChange={(e) => handleIndicatorSettingChange('ma', 'comparison', e.target.value)}
+                  label="Comparison"
+                >
+                  <MenuItem value="CROSS_ABOVE">Crosses Above</MenuItem>
+                  <MenuItem value="CROSS_BELOW">Crosses Below</MenuItem>
+                  <MenuItem value="ABOVE">Above</MenuItem>
+                  <MenuItem value="BELOW">Below</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
+  const renderRSISettings = () => {
+    if (!indicatorSettings.rsi.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white', borderTop: '1px solid rgba(0, 0, 0, 0.08)' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Period"
+                type="number"
+                value={indicatorSettings.rsi.period}
+                onChange={(e) => handleIndicatorSettingChange('rsi', 'period', parseInt(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Value"
+                type="number"
+                value={indicatorSettings.rsi.value}
+                onChange={(e) => handleIndicatorSettingChange('rsi', 'value', parseFloat(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Comparison</InputLabel>
+                <Select
+                  value={indicatorSettings.rsi.comparison}
+                  onChange={(e) => handleIndicatorSettingChange('rsi', 'comparison', e.target.value)}
+                  label="Comparison"
+                >
+                  <MenuItem value="ABOVE">Above</MenuItem>
+                  <MenuItem value="BELOW">Below</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
     try {
-      // Format indicators properly
-      const formattedIndicators = {};
-      Object.entries(indicatorSettings)
-        .filter(([_, settings]) => settings.enabled)
-        .forEach(([type, settings]) => {
-          formattedIndicators[type] = {
-            enabled: settings.enabled,
-            period: settings.period,
-            type: type,
-            ...(settings.deviation && { deviation: settings.deviation }),
-            ...(settings.crossDirection && { crossDirection: settings.crossDirection }),
-            ...(settings.threshold && { threshold: settings.threshold }),
-            ...(settings.condition && { condition: settings.condition }),
-            ...(settings.stdDev && { stdDev: settings.stdDev })
-          };
-        });
-
-      const response = await axios.post('http://localhost:8000/backtest', {
+      const requestBody = {
         symbol: strategy.symbol,
         start_date: strategy.start_date,
         end_date: strategy.end_date,
-        indicators: formattedIndicators,
-        position_size: strategy.position_size,
-        take_profit: strategy.take_profit,
-        stop_loss: strategy.stop_loss
-      });
+        timeframe: strategy.timeframe,
+        initial_capital: strategy.initial_capital,
+        entry_conditions: {
+          trade_direction: strategy.entry_conditions.trade_direction,
+          ma_condition: indicatorSettings.ma.enabled ? {
+            period: indicatorSettings.ma.period,
+            ma_type: indicatorSettings.ma.type,
+            comparison: indicatorSettings.ma.comparison,
+            deviation_pct: indicatorSettings.ma.deviation_pct
+          } : null,
+          rsi_condition: indicatorSettings.rsi.enabled ? {
+            period: indicatorSettings.rsi.period,
+            comparison: indicatorSettings.rsi.comparison,
+            value: indicatorSettings.rsi.value
+          } : null
+        },
+        exit_conditions: {
+          stop_loss_pct: strategy.exit_conditions.stop_loss_pct,
+          take_profit_pct: strategy.exit_conditions.take_profit_pct,
+          position_size_pct: strategy.exit_conditions.position_size_pct
+        }
+      };
 
+      const response = await axios.post('http://localhost:8000/backtest', requestBody);
       navigate('/results', { state: { results: response.data } });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';
@@ -592,17 +746,80 @@ const StrategyBuilder = () => {
 
           <Grid item xs={12}>
             <SectionHeader>
+              Trade Direction
+            </SectionHeader>
+            <TradeDirectionCard>
+              <FormControl component="fieldset">
+                <RadioGroup
+                  row
+                  value={strategy.entry_conditions.trade_direction}
+                  onChange={(e) => setStrategy({
+                    ...strategy,
+                    entry_conditions: {
+                      ...strategy.entry_conditions,
+                      trade_direction: e.target.value
+                    }
+                  })}
+                >
+                  <FormControlLabel 
+                    value="BUY" 
+                    control={<Radio />} 
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <TrendingUp sx={{ color: 'success.main', mr: 1 }} />
+                        <Typography>Buy</Typography>
+                      </Box>
+                    }
+                  />
+                  <FormControlLabel 
+                    value="SELL" 
+                    control={<Radio />} 
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <TrendingDown sx={{ color: 'error.main', mr: 1 }} />
+                        <Typography>Sell</Typography>
+                      </Box>
+                    }
+                  />
+                </RadioGroup>
+              </FormControl>
+            </TradeDirectionCard>
+          </Grid>
+
+          <Grid item xs={12}>
+            <SectionHeader>
               Technical Indicators
             </SectionHeader>
             <Box sx={{ mb: 4 }}>
-              {renderIndicatorCard('sma', 'Simple Moving Average', 
-                'SMA calculates the average price over a specified period')}
-              {renderIndicatorCard('ema', 'Exponential Moving Average', 
-                'EMA gives more weight to recent prices')}
-              {renderIndicatorCard('rsi', 'Relative Strength Index', 
-                'RSI measures the speed and magnitude of recent price changes')}
-              {renderIndicatorCard('bollinger', 'Bollinger Bands', 
-                'Bollinger Bands measure market volatility')}
+              <IndicatorCard enabled={indicatorSettings.ma.enabled}>
+                <CardContent>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={indicatorSettings.ma.enabled}
+                        onChange={() => handleIndicatorChange('ma')}
+                      />
+                    }
+                    label="Moving Average"
+                  />
+                </CardContent>
+                {renderMASettings()}
+              </IndicatorCard>
+              
+              <IndicatorCard enabled={indicatorSettings.rsi.enabled}>
+                <CardContent>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={indicatorSettings.rsi.enabled}
+                        onChange={() => handleIndicatorChange('rsi')}
+                      />
+                    }
+                    label="Relative Strength Index (RSI)"
+                  />
+                </CardContent>
+                {renderRSISettings()}
+              </IndicatorCard>
             </Box>
           </Grid>
 

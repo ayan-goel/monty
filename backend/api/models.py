@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Union
+from enum import Enum
+from typing import Literal
 
 class IndicatorSettings(BaseModel):
     enabled: bool
@@ -42,4 +44,48 @@ class Trade(BaseModel):
     exit_price: Optional[float]
     position_size: float
     profit: Optional[float]
-    status: str  # 'open' or 'closed' 
+    status: str  # 'open' or 'closed'
+
+class TradeDirection(str, Enum):
+    BUY = "BUY"
+    SELL = "SELL"
+
+class MAType(str, Enum):
+    SMA = "SMA"
+    EMA = "EMA"
+
+class MAComparisonType(str, Enum):
+    CROSS_ABOVE = "CROSS_ABOVE"
+    CROSS_BELOW = "CROSS_BELOW"
+    ABOVE = "ABOVE"
+    BELOW = "BELOW"
+
+class MACondition(BaseModel):
+    period: int = 20
+    ma_type: MAType
+    comparison: MAComparisonType
+    deviation_pct: float
+
+class RSICondition(BaseModel):
+    period: int = 14
+    comparison: Literal["ABOVE", "BELOW"]
+    value: float
+
+class EntryCondition(BaseModel):
+    ma_condition: Optional[MACondition] = None
+    rsi_condition: Optional[RSICondition] = None
+    trade_direction: TradeDirection
+
+class ExitCondition(BaseModel):
+    stop_loss_pct: float
+    take_profit_pct: float
+    position_size_pct: float
+
+class BacktestRequest(BaseModel):
+    symbol: str
+    start_date: str
+    end_date: str
+    timeframe: str = "1d"
+    initial_capital: float = 10000.0
+    entry_conditions: EntryCondition
+    exit_conditions: ExitCondition 
