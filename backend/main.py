@@ -47,9 +47,26 @@ class RSICondition(BaseModel):
     comparison: Literal["ABOVE", "BELOW"]
     value: float
 
+class MACDCrossoverType(str, Enum):
+    BULLISH = "BULLISH"  # MACD crosses above Signal Line
+    BEARISH = "BEARISH"  # MACD crosses below Signal Line
+
+class MACDComparisonType(str, Enum):
+    ABOVE_ZERO = "ABOVE_ZERO"  # MACD above zero line
+    BELOW_ZERO = "BELOW_ZERO"  # MACD below zero line
+    HISTOGRAM_POSITIVE = "HISTOGRAM_POSITIVE"  # Histogram > 0
+    HISTOGRAM_NEGATIVE = "HISTOGRAM_NEGATIVE"  # Histogram < 0
+
+class MACDCondition(BaseModel):
+    crossover: Optional[MACDCrossoverType] = None  
+    macd_comparison: Optional[MACDComparisonType] = None  
+    histogram_positive: Optional[bool] = None  
+    macd_signal_deviation_pct: Optional[float] = None 
+
 class EntryCondition(BaseModel):
     ma_condition: Optional[MACondition] = None
     rsi_condition: Optional[RSICondition] = None
+    macd_condition: Optional[MACDCondition]= None
     trade_direction: TradeDirection
 
 class ExitCondition(BaseModel):
@@ -107,6 +124,25 @@ class BacktestService:
         loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
         rs = gain / loss
         return 100 - (100 / (1 + rs))
+    
+    def calculate_macd(self,df, short_period=12, long_period=26):
+        short_ema = df['Close'].ewm(span=short_period, adjust=False).mean() # calculate the exponental weighted movement to short
+        long_ema = df['Close'].ewm(span=long_period, adjust=False).mean() # calculate the exponential weighted movement for long
+        return short_ema - long_ema # subtract them
+    
+    
+    def calculate_signal_line(self,df, macd_column='MACD', signal_period=9): # need the signal line to predict divergence
+        return df[macd_column].ewm(span=signal_period, adjust=False).mean()
+
+    def calculate_macd_divergence(self,df, divergence_type='BULLISH'):
+        price_trend = df['Close'].diff()
+        macd_trend = df['MACD'].diff()
+        if divergence_type == 'BULLISH':
+            return (price_trend < 0) & (macd_trend > 0)
+        elif divergence_type == 'BEARISH':
+            return (price_trend > 0) & (macd_trend < 0)
+        return None
+
 
     def calculate_indicators(self, df: pd.DataFrame, entry_conditions: EntryCondition) -> pd.DataFrame:
         if entry_conditions.ma_condition:
@@ -125,6 +161,35 @@ class BacktestService:
         if entry_conditions.rsi_condition:
             period = entry_conditions.rsi_condition.period
             df[f'RSI_{period}'] = self.calculate_rsi(df, period)
+        
+        if entry_conditions.macd_condition:
+            #macd and signal line
+            df['MACD'] = self.calculate_macd(df)
+            df['Signal_Line'] = self.calculate_signal_line(df)
+
+            #histogram
+            df['MACD_Histogram'] = df['MACD'] - df['Signal_Line']
+
+            ###macd conditions
+            if entry_conditions.macd_condition and entry_conditions.macd_condition.crossover: # hasattribute
+                if entry_conditions.macd_condition.crossover == "BULLISH":
+                    df['MACD_Crossover'] = (df['MACD'].shift(1) < df['Signal_Line'].shift(1)) & (df['MACD'] > df['Signal_Line'])
+                elif entry_conditions.macd_condition.crossover == "BEARISH":
+                    df['MACD_Crossover'] = (df['MACD'].shift(1) > df['Signal_Line'].shift(1)) & (df['MACD'] < df['Signal_Line'])
+
+            if hasattr(entry_conditions.macd_condition, 'histogram_positive'):
+                df['MACD_Histogram_Positive'] = df['MACD_Histogram'] > 0
+
+            if entry_conditions.macd_condition and entry_conditions.macd_condition.macd_comparison == MACDComparisonType.ABOVE_ZERO:
+                df['MACD_Above_Zero'] = df['MACD'] > 0
+
+            if hasattr(entry_conditions.macd_condition, 'divergence'):
+                df['MACD_Divergence'] = self.calculate_macd_divergence(df, entry_conditions.macd_condition.divergence)
+
+            if hasattr(entry_conditions.macd_condition, 'macd_signal_deviation_pct'):
+                deviation = entry_conditions.macd_condition.macd_signal_deviation_pct / 100
+                df['MACD_Signal_Deviation'] = abs(df['MACD'] - df['Signal_Line']) > (df['Signal_Line'] * deviation)
+
             
         return df
 
@@ -157,6 +222,7 @@ class BacktestService:
                 rsi_condition_met = row[rsi_col] > rsi_cond.value
             else:
                 rsi_condition_met = row[rsi_col] < rsi_cond.value
+
 
         if ((entry_conditions.ma_condition is None or ma_condition_met) and 
             (entry_conditions.rsi_condition is None or rsi_condition_met)):
