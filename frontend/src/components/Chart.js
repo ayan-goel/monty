@@ -13,7 +13,6 @@ import {
 import { Line } from 'react-chartjs-2';
 import { Box } from '@mui/material';
 
-// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,7 +27,6 @@ ChartJS.register(
 const Chart = ({ data }) => {
   const chartRef = useRef(null);
 
-  // Cleanup chart on unmount
   useEffect(() => {
     return () => {
       if (chartRef.current) {
@@ -91,8 +89,7 @@ const Chart = ({ data }) => {
           display: false,
         },
         ticks: {
-          maxTicksLimit: 8,
-          color: '#7F8C8D',
+          display: false,
         }
       },
       y: {

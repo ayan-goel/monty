@@ -90,12 +90,42 @@ const StatItem = styled(Box)(({ theme }) => ({
   },
 }));
 
+const ErrorBox = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(3),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.error.light,
+  color: theme.palette.error.contrastText,
+  textAlign: 'center',
+  marginBottom: theme.spacing(3),
+}));
+
 const BacktestResults = () => {
   const location = useLocation();
   const results = location.state?.results;
 
   if (!results) {
     return <Typography>No results available</Typography>;
+  }
+
+  if (results.message) {
+    return (
+      <Box sx={{ py: 4 }}>
+        <ErrorBox>
+          <Typography variant="h5" component="div" gutterBottom>
+            Error
+          </Typography>
+          <Typography variant="h6">
+            {results.message}
+          </Typography>
+          <Typography variant="body1">
+            Data Points: {results.data_points}
+          </Typography>
+          <Typography variant="body1">
+            Date Range: {results.date_range}
+          </Typography>
+        </ErrorBox>
+      </Box>
+    );
   }
 
   const chartData = {
@@ -105,9 +135,10 @@ const BacktestResults = () => {
         label: 'Portfolio Value',
         data: results.equity_curve,
         borderColor: 'rgba(33, 150, 243, 1)',
-        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+        backgroundColor: 'rgba(0,0,0, 1)',
+        pointRadius: 0,
         fill: true,
-        tension: 0.4,
+        tension: 0.7,
       },
     ],
   };
@@ -117,11 +148,39 @@ const BacktestResults = () => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: true,
+        display: false,
       },
       tooltip: {
         mode: 'index',
         intersect: false,
+        callbacks: {
+          title: () => '',
+          label: (context) => {
+            const value = context.parsed.y;
+            const percentageGain = ((value - results.initial_capital) / results.initial_capital) * 100;
+            const percentageColor = percentageGain >= 0 ? '#8cedae' : '#f58258';
+            return [
+              `Portfolio Value: $${value.toFixed(2)}`, 
+              `Gain: ${percentageGain.toFixed(2)}%`
+            ];
+          },
+          labelColor: (context) => {
+            const value = context.parsed.y;
+            const percentageGain = ((value - results.initial_capital) / results.initial_capital) * 100;
+            return {
+              backgroundColor: percentageGain >= 0 ? '#8cedae' : '#f58258',
+              borderWidth: 0,
+              borderDash: [2, 2],
+              borderRadius: 2,
+              fontSize: 16
+            };
+          },
+          labelTextColor: (context) => {
+            const value = context.parsed.y;
+            const percentageGain = ((value - results.initial_capital) / results.initial_capital) * 100;
+            return percentageGain >= 0 ? '#8cedae' : '#f58258';
+          },
+        }
       },
     },
     scales: {
@@ -130,11 +189,18 @@ const BacktestResults = () => {
         grid: {
           color: 'rgba(0, 0, 0, 0.05)',
         },
+        ticks: {
+          color: '#7F8C8D',
+          callback: (value) => `$${value.toFixed(0)}`
+        }
       },
       x: {
         grid: {
           display: false,
         },
+        ticks: {
+          display: false,
+        }
       },
     },
   };
@@ -279,4 +345,4 @@ const BacktestResults = () => {
   );
 };
 
-export default BacktestResults; 
+export default BacktestResults;

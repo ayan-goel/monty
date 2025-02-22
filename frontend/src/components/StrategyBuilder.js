@@ -36,7 +36,6 @@ import {
   TrendingDown,
 } from '@mui/icons-material';
 
-// Styled Components
 const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
   transition: 'transform 0.2s ease-in-out',
@@ -134,13 +133,13 @@ const SectionHeader = styled(Typography)(({ theme }) => ({
 const IndicatorCardContent = styled(CardContent)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  padding: theme.spacing(2, 3), // Increased padding
+  padding: theme.spacing(2, 3),
   '& .MuiFormControlLabel-root': {
     margin: 0,
     width: '100%',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: '48px', // Ensure consistent height
+    minHeight: '48px',
   },
   '& .MuiFormControlLabel-label': {
     fontSize: '1.2rem',
@@ -169,7 +168,6 @@ const TradeDirectionCard = styled(Card)(({ theme }) => ({
   boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
 }));
 
-// Helper Components
 const InfoTooltip = ({ title }) => (
   <Tooltip title={title} arrow placement="top">
     <IconButton size="small" sx={{ ml: 1 }}>
@@ -214,9 +212,9 @@ const StrategyBuilder = () => {
   const [error, setError] = useState('');
   const [strategy, setStrategy] = useState({
     symbol: '',
-    start_date: '',
-    end_date: '',
-    timeframe: '1d',
+    start_date: '2024-01-01',
+    end_date: '2024-12-31',
+    timeframe: '1h',
     initial_capital: 10000,
     entry_conditions: {
       trade_direction: 'BUY',
@@ -235,14 +233,14 @@ const StrategyBuilder = () => {
       enabled: false,
       period: 20,
       type: 'SMA',
-      comparison: 'CROSS_ABOVE',
+      comparison: 'BELOW',
       deviation_pct: 0.5
     },
     rsi: {
       enabled: false,
       period: 14,
-      comparison: 'ABOVE',
-      value: 70
+      comparison: 'BELOW',
+      value: 30
     }
   });
 
@@ -259,7 +257,6 @@ const StrategyBuilder = () => {
       }
     }));
 
-    // Update strategy.indicators based on new settings
     setStrategy(prev => {
       const newIndicators = { ...prev.indicators };
       if (!indicatorSettings[indicatorType].enabled) {
@@ -283,7 +280,6 @@ const StrategyBuilder = () => {
       }
     }));
 
-    // Update strategy.indicators if the indicator is enabled
     if (indicatorSettings[indicatorType].enabled) {
       setStrategy(prev => ({
         ...prev,
@@ -327,7 +323,8 @@ const StrategyBuilder = () => {
           mt: 2, 
           px: 3, 
           pb: 3,
-          backgroundColor: 'white'
+          backgroundColor: 'white',
+          borderTop: '1px solid rgba(0, 0, 0, 0.08)'
         }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
@@ -585,8 +582,10 @@ const StrategyBuilder = () => {
           position_size_pct: strategy.exit_conditions.position_size_pct
         }
       };
-
+      
+      console.log(requestBody)
       const response = await axios.post('http://localhost:8000/backtest', requestBody);
+      console.log(response)
       navigate('/results', { state: { results: response.data } });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';
@@ -846,7 +845,14 @@ const StrategyBuilder = () => {
                     </Typography>
                     <StyledSlider
                       value={strategy.position_size}
-                      onChange={(e, newValue) => setStrategy({...strategy, position_size: newValue})}
+                      // onChange={(e, newValue) => setStrategy({...strategy, position_size: newValue})}
+                      onChange={(e) => setStrategy({
+                        ...strategy,
+                        exit_conditions: {
+                          ...strategy.exit_conditions,
+                          position_size_pct: e.target.value
+                        }
+                      })}
                       min={1}
                       max={100}
                       valueLabelDisplay="auto"
@@ -865,7 +871,14 @@ const StrategyBuilder = () => {
                     </Typography>
                     <StyledSlider
                       value={strategy.take_profit}
-                      onChange={(e, newValue) => setStrategy({...strategy, take_profit: newValue})}
+                      // onChange={(e, newValue) => setStrategy({...strategy, take_profit: newValue})}
+                      onChange={(e) => setStrategy({
+                        ...strategy,
+                        exit_conditions: {
+                          ...strategy.exit_conditions,
+                          take_profit_pct: e.target.value
+                        }
+                      })}
                       min={0.5}
                       max={20}
                       step={0.5}
@@ -885,7 +898,14 @@ const StrategyBuilder = () => {
                     </Typography>
                     <StyledSlider
                       value={strategy.stop_loss}
-                      onChange={(e, newValue) => setStrategy({...strategy, stop_loss: newValue})}
+                      // onChange={(e, newValue) => setStrategy({...strategy, stop_loss: newValue})}
+                      onChange={(e) => setStrategy({
+                        ...strategy,
+                        exit_conditions: {
+                          ...strategy.exit_conditions,
+                          stop_loss_pct: e.target.value
+                        }
+                      })}
                       min={0.5}
                       max={20}
                       step={0.5}
