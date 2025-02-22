@@ -33,7 +33,7 @@ const StrategyBuilder = () => {
     { id: 'ma_20', name: 'Moving Average 20', type: 'ma', period: 20 },
     { id: 'ma_50', name: 'Moving Average 50', type: 'ma', period: 50 },
     { id: 'rsi', name: 'RSI', type: 'oscillator', period: 14 },
-    { id: 'fibonacci', name: 'Fibonacci Bands', type: 'bands' }
+    { id: 'bollinger', name: 'Bollinger Bands', type: 'bands', period: 20, std_dev: 2 }
   ]);
 
   const handleSubmit = async (e) => {
@@ -48,16 +48,24 @@ const StrategyBuilder = () => {
   };
 
   const handleIndicatorChange = (indicator) => {
-    setStrategy(prev => ({
-      ...prev,
-      indicators: {
-        ...prev.indicators,
-        [indicator.id]: {
+    setStrategy(prev => {
+      const newIndicators = { ...prev.indicators };
+      if (newIndicators[indicator.id]) {
+        // If indicator exists, remove it (uncheck)
+        delete newIndicators[indicator.id];
+      } else {
+        // If indicator doesn't exist, add it (check)
+        newIndicators[indicator.id] = {
           type: indicator.type,
-          period: indicator.period
-        }
+          period: indicator.period,
+          ...(indicator.type === 'bands' && { std_dev: indicator.std_dev }) // Add std_dev for Bollinger Bands
+        };
       }
-    }));
+      return {
+        ...prev,
+        indicators: newIndicators
+      };
+    });
   };
 
   return (

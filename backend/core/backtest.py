@@ -110,6 +110,19 @@ class Backtester:
                 # Clean up any potential infinity values
                 df['RSI'] = df['RSI'].replace([np.inf, -np.inf], 100)
                 df['RSI'] = df['RSI'].fillna(50)  # Fill NaN values with neutral RSI
+            elif indicator == 'bollinger':
+                period = params.get('period', 20)
+                std_dev = params.get('std_dev', 2)
+                
+                # Calculate middle band (20-day SMA)
+                df['BB_middle'] = df['Close'].rolling(window=period).mean()
+                
+                # Calculate standard deviation
+                rolling_std = df['Close'].rolling(window=period).std()
+                
+                # Calculate upper and lower bands
+                df['BB_upper'] = df['BB_middle'] + (rolling_std * std_dev)
+                df['BB_lower'] = df['BB_middle'] - (rolling_std * std_dev)
         
         return df
     
