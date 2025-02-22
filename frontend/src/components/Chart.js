@@ -7,9 +7,11 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { Box } from '@mui/material';
 
 // Register ChartJS components
 ChartJS.register(
@@ -19,7 +21,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const Chart = ({ data }) => {
@@ -40,48 +43,74 @@ const Chart = ({ data }) => {
       {
         label: 'Portfolio Value',
         data: data.returns,
-        fill: false,
-        borderColor: 'rgb(75, 192, 192)',
-        tension: 0.1
+        fill: true,
+        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+        borderColor: 'rgba(33, 150, 243, 1)',
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: 'rgba(33, 150, 243, 1)',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
       }
     ]
   };
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        display: false,
       },
-      title: {
-        display: true,
-        text: 'Strategy Performance'
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#2C3E50',
+        bodyColor: '#2C3E50',
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        borderWidth: 1,
+        padding: 12,
+        boxPadding: 4,
+        usePointStyle: true,
+        callbacks: {
+          label: (context) => {
+            return `$${context.parsed.y.toFixed(2)}`;
+          }
+        }
       }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index',
     },
     scales: {
       x: {
-        type: 'category',
-        display: true,
-        title: {
-          display: true,
-          text: 'Date'
+        grid: {
+          display: false,
+        },
+        ticks: {
+          maxTicksLimit: 8,
+          color: '#7F8C8D',
         }
       },
       y: {
-        type: 'linear',
-        display: true,
-        title: {
-          display: true,
-          text: 'Value ($)'
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+        },
+        ticks: {
+          color: '#7F8C8D',
+          callback: (value) => `$${value.toFixed(0)}`
         }
       }
     }
   };
 
   return (
-    <div className="chart">
-      <Line ref={chartRef} data={chartData} options={options} />
-    </div>
+    <Box sx={{ width: '100%', height: '100%' }}>
+      <Line data={chartData} options={options} />
+    </Box>
   );
 };
 
