@@ -6,7 +6,9 @@ from typing import List, Dict, Any, Optional, Literal
 from pydantic import BaseModel
 from datetime import datetime
 from enum import Enum
+
 from fastapi.middleware.cors import CORSMiddleware
+from core.monte_carlo import MonteCarloSimulator
 
 app = FastAPI(
     title="Monty",
@@ -532,6 +534,60 @@ async def run_backtest(request: BacktestRequest):
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class MonteCarloRequest(BaseModel):
+    lookback_years: int = 10
+    simulation_length_days: int = 252
+    num_simulations: int = 500
+    backtest_request: BacktestRequest
+
+    class Config:
+        from_attributes = True
+
+@app.post("/montecarlo", response_model=Dict[str, Any])
+async def run_monte_carlo(request: MonteCarloRequest):
+    try:
+        simulator = MonteCarloSimulator(
+            lookback_years=request.lookback_years,
+            simulation_length_days=request.simulation_length_days
+        )
+        
+        backtest_request = BacktestRequest(
+            symbol=request.backtest_request.symbol,
+            start_date=request.backtest_request.start_date,
+            end_date=request.backtest_request.end_date,
+            timeframe=request.backtest_request.timeframe,
+            initial_capital=request.backtest_request.initial_capital,
+            entry_conditions=request.backtest_request.entry_conditions.model_dump(),
+            exit_conditions=request.backtest_request.exit_conditions.model_dump()
+        )
+        
+        results = simulator.run_simulations(
+            backtest_request=backtest_request,
+            num_simulations=request.num_simulations
+        )
+        
+        return {
+            "avg_return": round(results.avg_return, 2),
+            "median_return": round(results.median_return, 2),
+            "highest_return": round(results.highest_return, 2),
+            "worst_return": round(results.worst_return, 2),
+            "avg_drawdown": round(results.avg_drawdown, 2),
+            "median_drawdown": round(results.median_drawdown, 2),
+            "worst_drawdown": round(results.worst_drawdown, 2),
+            "win_rate": round(results.win_rate, 2),
+            "sharpe_ratio": round(results.sharpe_ratio, 2),
+            "simulation_count": results.simulation_count,
+            "successful_simulations": results.successful_simulations,
+            "success_rate": round((results.successful_simulations / results.simulation_count) * 100, 2)
+        }
+    except Exception as e:
+        error_msg = str(e)
+        print(f"Monte Carlo simulation failed: {error_msg}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Monte Carlo simulation failed: {error_msg}"
+        )
 
 if __name__ == "__main__":
     import uvicorn
