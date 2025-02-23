@@ -518,7 +518,7 @@ class BacktestService:
         for equity in equity_curve:
             if equity > peak:
                 peak = equity
-            if peak > 0:  # Ensure we don't divide by zero
+            if peak > 0:  
                 drawdown = (peak - equity) / peak * 100
                 max_drawdown = max(max_drawdown, drawdown)
                 
@@ -598,24 +598,19 @@ async def run_monte_carlo(request: MonteCarloRequest):
 @app.post("/monte-carlo", response_model=Dict[str, Any])
 async def run_monte_carlo(request: Dict[str, Any]):
     try:
-        # Extract backtest request, ensuring it's a dictionary
         backtest_request = request.get('backtest_request', {})
         
-        # Ensure backtest_request is a proper BacktestRequest object
         if not isinstance(backtest_request, dict):
             backtest_request = backtest_request.dict()
         
-        # Validate critical fields
         if 'symbol' not in backtest_request:
             raise ValueError("Missing 'symbol' in backtest request")
         
-        # Initialize Monte Carlo simulator with parameters from request
         mc_simulator = MonteCarloSimulator(
             lookback_years=request.get('lookback_years', 10),
             simulation_length_days=request.get('simulation_length_days', 252)
         )
         
-        # Create BacktestRequest object
         backtest_request_obj = BacktestRequest(
             symbol=backtest_request['symbol'],
             start_date=backtest_request.get('start_date', '2024-01-01'),
@@ -626,13 +621,11 @@ async def run_monte_carlo(request: Dict[str, Any]):
             exit_conditions=backtest_request.get('exit_conditions', {})
         )
         
-        # Run simulations
         results = mc_simulator.run_simulations(
             backtest_request=backtest_request_obj,
             num_simulations=request.get('num_simulations', 500)
         )
         
-        # Convert dataclass to dict for response
         results_dict = {
             'avg_return': results.avg_return,
             'median_return': results.median_return,
