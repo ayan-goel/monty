@@ -808,18 +808,28 @@ const StrategyBuilder = () => {
           position_size_pct: strategy.exit_conditions.position_size_pct
         }
       };
-      
-      console.log(requestBody)
+
+      console.log("Backtest Request Body:", requestBody);
+
+      // Send backtest request to the backend
       const response = await axios.post('http://localhost:8000/backtest', requestBody);
-      console.log(response)
-      navigate('/results', { state: { results: response.data } });
+      console.log("Backtest Response:", response.data);
+
+      // Navigate to the results page, passing both results and the original request
+      navigate('/results', { 
+        state: { 
+          results: response.data, 
+          backtest_request: requestBody  // Pass the requestBody here for Monte Carlo
+        } 
+      });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';
       setError(typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+};
+
 
   const renderIndicatorCard = (type, title, description) => (
     <IndicatorCard enabled={indicatorSettings[type].enabled}>

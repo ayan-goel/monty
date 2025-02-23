@@ -24,6 +24,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import axios from 'axios';
+import { Casino } from '@mui/icons-material';
+
 
 ChartJS.register(
   CategoryScale,
@@ -104,7 +107,36 @@ const BacktestResults = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const results = location.state?.results;
+  const backtestRequest = location.state?.backtest_request;
 
+  const handleRunMonteCarlo = async () => {
+    if (!backtestRequest) {
+        console.error("Backtest request data not available for Monte Carlo simulation.");
+        return;
+    }
+
+    const monteCarloParams = {
+        lookback_years: 10,
+        simulation_length_days: 252,
+        num_simulations: 500,
+        backtest_request: backtestRequest
+    };
+
+    try {
+        const response = await axios.post('http://localhost:8000/monte-carlo', monteCarloParams);
+        navigate('/monte-carlo-results', { 
+            state: { 
+                results: response.data,
+                backtest_request: backtestRequest 
+            } 
+        });
+    } catch (error) {
+        console.error('Error running Monte Carlo simulation:', error.response?.data || error.message);
+        alert(`Monte Carlo simulation failed: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
+  
   if (!results) {
     return <Typography>No results available</Typography>;
   }
@@ -233,6 +265,18 @@ const BacktestResults = () => {
           Back to Strategy Builder
         </Button>
       </Box>
+
+      <Grid item xs={12}>
+        <Button
+          startIcon={<Casino />}
+          variant="contained"
+          color="primary"
+          onClick={handleRunMonteCarlo}
+          fullWidth
+        >
+          Run Monte Carlo Simulation
+        </Button>
+      </Grid>
 
       <Box sx={{ py: 4 }}>
         <Grid container spacing={3}>

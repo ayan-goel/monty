@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Container, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
+import MonteCarloResults from './components/MonteCarloResults';
+import MonteCarloSimulator from './components/MonteCarloSimulator';
 import StrategyBuilder from './components/StrategyBuilder';
 import BacktestResults from './components/BacktestResults';
 
@@ -53,6 +55,8 @@ function App() {
           <Routes>
             <Route path="/" element={<StrategyBuilder />} />
             <Route path="/results" element={<BacktestResults />} />
+            <Route path="/monte-carlo" element={<MonteCarloSimulator/>} />
+            <Route path="/monte-carlo-results" element={<MonteCarloResults/>} />
           </Routes>
         </MainContainer>
       </Box>

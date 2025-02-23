@@ -6,9 +6,9 @@ from typing import List, Dict, Any, Optional, Literal
 from pydantic import BaseModel
 from datetime import datetime
 from enum import Enum
-
 from fastapi.middleware.cors import CORSMiddleware
 from core.monte_carlo import MonteCarloSimulator
+from core.helpers.backtest_service import BacktestRequest
 
 app = FastAPI(
     title="Monty",
@@ -23,6 +23,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class MonteCarloRequest(BaseModel):
+    lookback_years: int = 10
+    simulation_length_days: int = 252
+    num_simulations: int = 500
+    backtest_request: BacktestRequest
 
 class TradeDirection(str, Enum):
     BUY = "BUY"
@@ -588,6 +594,63 @@ async def run_monte_carlo(request: MonteCarloRequest):
             status_code=500,
             detail=f"Monte Carlo simulation failed: {error_msg}"
         )
+    
+@app.post("/monte-carlo", response_model=Dict[str, Any])
+async def run_monte_carlo(request: Dict[str, Any]):
+    try:
+        # Extract backtest request, ensuring it's a dictionary
+        backtest_request = request.get('backtest_request', {})
+        
+        # Ensure backtest_request is a proper BacktestRequest object
+        if not isinstance(backtest_request, dict):
+            backtest_request = backtest_request.dict()
+        
+        # Validate critical fields
+        if 'symbol' not in backtest_request:
+            raise ValueError("Missing 'symbol' in backtest request")
+        
+        # Initialize Monte Carlo simulator with parameters from request
+        mc_simulator = MonteCarloSimulator(
+            lookback_years=request.get('lookback_years', 10),
+            simulation_length_days=request.get('simulation_length_days', 252)
+        )
+        
+        # Create BacktestRequest object
+        backtest_request_obj = BacktestRequest(
+            symbol=backtest_request['symbol'],
+            start_date=backtest_request.get('start_date', '2024-01-01'),
+            end_date=backtest_request.get('end_date', '2024-12-31'),
+            timeframe=backtest_request.get('timeframe', '1d'),
+            initial_capital=backtest_request.get('initial_capital', 10000),
+            entry_conditions=backtest_request.get('entry_conditions', {}),
+            exit_conditions=backtest_request.get('exit_conditions', {})
+        )
+        
+        # Run simulations
+        results = mc_simulator.run_simulations(
+            backtest_request=backtest_request_obj,
+            num_simulations=request.get('num_simulations', 500)
+        )
+        
+        # Convert dataclass to dict for response
+        results_dict = {
+            'avg_return': results.avg_return,
+            'median_return': results.median_return,
+            'highest_return': results.highest_return,
+            'worst_return': results.worst_return,
+            'avg_drawdown': results.avg_drawdown,
+            'median_drawdown': results.median_drawdown,
+            'worst_drawdown': results.worst_drawdown,
+            'win_rate': results.win_rate,
+            'sharpe_ratio': results.sharpe_ratio,
+            'simulation_count': results.simulation_count,
+            'successful_simulations': results.successful_simulations
+        }
+        
+        return results_dict
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
