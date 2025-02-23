@@ -14,7 +14,7 @@ class IndicatorSettings(BaseModel):
     stdDev: Optional[float] = None
 
     def dict(self, *args, **kwargs):
-        # Convert to dictionary and ensure all fields are included
+        # convert to dict
         d = super().dict(*args, **kwargs)
         return {k: v for k, v in d.items() if v is not None}
 
@@ -61,8 +61,8 @@ class MAComparisonType(str, Enum):
     BELOW = "BELOW"
 
 class MACDCrossoverType(str, Enum):
-    BULLISH = "BULLISH"  # MACD crosses above Signal Line
-    BEARISH = "BEARISH"  # MACD crosses below Signal Line
+    BULLISH = "BULLISH"  # MACD crosses above signal Line
+    BEARISH = "BEARISH"  # MACD crosses below signal Line
 
 class MACDComparisonType(str, Enum):
     ABOVE_ZERO = "ABOVE_ZERO"  # MACD above zero line

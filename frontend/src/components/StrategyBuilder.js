@@ -935,7 +935,12 @@ const StrategyBuilder = () => {
             <Grid item xs={12}>
               <SectionHeader>
                 Basic Settings
+                <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '800px', lineHeight: 1.6 }}>
+              Choose the base conditions for your trade. What position are you buying/selling, and during what time range 
+              should the app look at to determine your algorithm's effectiveness.
+              </Typography>
               </SectionHeader>
+              
               <Grid container spacing={3}>
                 <Grid item xs={12} sm={4}>
                   <BasicSettingsCard>
@@ -1028,6 +1033,9 @@ const StrategyBuilder = () => {
             <Grid item xs={12}>
               <SectionHeader>
                 Trade Direction
+                <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '800px', lineHeight: 1.6 }}>
+              Choose whether or not you want to place a buy or a sell based off of the conditions that you pick.
+              </Typography>
               </SectionHeader>
               <TradeDirectionCard>
                 <FormControl component="fieldset">
@@ -1070,6 +1078,10 @@ const StrategyBuilder = () => {
             <Grid item xs={12}>
               <SectionHeader>
                 Technical Indicators
+                <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '800px', lineHeight: 1.6 }}>
+                Technical indicators are heuristic or mathematical calculations based on the price, volume, 
+                or open interest of a security or contract.
+              </Typography>
               </SectionHeader>
               <Box sx={{ mb: 4 }}>
                 <IndicatorCard enabled={indicatorSettings.ma.enabled}>
@@ -1084,7 +1096,9 @@ const StrategyBuilder = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <MultilineChart sx={{ mr: 1 }} />
-                          <Typography>Moving Average</Typography>
+                          <Typography>Moving Average
+                          <InfoTooltip title="Takes the arithmetic mean of a given set of prices over a specific number of days in the past" />
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1104,7 +1118,9 @@ const StrategyBuilder = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <WaterfallChart sx={{ mr: 1 }} />
-                          <Typography>Relative Strength Index (RSI)</Typography>
+                          <Typography>Relative Strength Index (RSI)
+                          <InfoTooltip title="Measures the speed and magnitude of a security's recent price changes to detect overbought or oversold conditions" />
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1124,7 +1140,9 @@ const StrategyBuilder = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <SignalCellularAlt sx={{ mr: 1 }} />
-                          <Typography>MACD</Typography>
+                          <Typography>MACD
+                          <InfoTooltip title="Difference between 12 period ema and 26 period ema" />
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1144,7 +1162,9 @@ const StrategyBuilder = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Compress sx={{ mr: 1 }} />
-                          <Typography>Bollinger Bands</Typography>
+                          <Typography>Bollinger Bands
+                          <InfoTooltip title="The bands widen and narrow as the volatility of the underlying asset changes" />
+                          </Typography>
                         </Box>
                       }
                     />
@@ -1164,7 +1184,9 @@ const StrategyBuilder = () => {
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                           <Analytics sx={{ mr: 1 }} />
-                          <Typography>Average Directional Index (ADX)</Typography>
+                          <Typography>Average Directional Index (ADX)
+                          <InfoTooltip title="Moving average of price range expansion or contraction" />
+                          </Typography>
                         </Box>
                       }
                     />
