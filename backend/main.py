@@ -79,8 +79,6 @@ class BBCondition(BaseModel):
     period: int = 20
     std_dev: float = 2.0
     comparison: BBComparisonType
-    use_bandwidth: bool = False
-    bandwidth_threshold: Optional[float] = None
 
 class ADXCondition(BaseModel):
     period: int = 14
@@ -216,23 +214,23 @@ class BacktestService:
                 deviation = entry_conditions.macd_condition.macd_signal_deviation_pct / 100
                 df['MACD_Signal_Deviation'] = abs(df['MACD'] - df['Signal_Line']) > (df['Signal_Line'] * deviation)
         
-            if entry_conditions.bb_condition:
-                bb_cond = entry_conditions.bb_condition
-                bb_df = self.calculate_bollinger_bands(df, bb_cond.period, bb_cond.std_dev)
-                
-                # Add all BB indicators
-                df['BB_middle'] = bb_df['BB_middle']
-                df['BB_upper'] = bb_df['BB_upper']
-                df['BB_lower'] = bb_df['BB_lower']
-                df['BB_bandwidth'] = bb_df['BB_bandwidth']
-                df['BB_percent_b'] = bb_df['BB_percent_b']
-                df['BB_typical_price'] = bb_df['BB_typical_price']
+        if entry_conditions.bb_condition:
+            bb_cond = entry_conditions.bb_condition
+            bb_df = self.calculate_bollinger_bands(df, bb_cond.period, bb_cond.std_dev)
+            
+            # Add all BB indicators
+            df['BB_middle'] = bb_df['BB_middle']
+            df['BB_upper'] = bb_df['BB_upper']
+            df['BB_lower'] = bb_df['BB_lower']
+            df['BB_bandwidth'] = bb_df['BB_bandwidth']
+            df['BB_percent_b'] = bb_df['BB_percent_b']
+            df['BB_typical_price'] = bb_df['BB_typical_price']
 
-            if entry_conditions.adx_condition:
-                adx_cond = entry_conditions.adx_condition
-                df['ADX'] = self.calculate_adx(df, adx_cond.period)
-                df['+DI14'] = df['+DI14']  # These are calculated in calculate_adx
-                df['-DI14'] = df['-DI14']
+        if entry_conditions.adx_condition:
+            adx_cond = entry_conditions.adx_condition
+            df['ADX'] = self.calculate_adx(df, adx_cond.period)
+            df['+DI14'] = df['+DI14']  # These are calculated in calculate_adx
+            df['-DI14'] = df['-DI14']
 
         return df
 
