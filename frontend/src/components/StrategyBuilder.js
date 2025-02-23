@@ -26,6 +26,7 @@ import {
   RadioGroup,
   FormControlLabel as MuiFormControlLabel,
   Radio,
+  CircularProgress,
 } from '@mui/material';
 import {
   Timeline,
@@ -34,6 +35,12 @@ import {
   Info,
   TrendingUp,
   TrendingDown,
+  Speed,
+  SignalCellularAlt,
+  WaterfallChart,
+  Compress,
+  Analytics,
+  MultilineChart
 } from '@mui/icons-material';
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -137,7 +144,7 @@ const IndicatorCardContent = styled(CardContent)(({ theme }) => ({
   '& .MuiFormControlLabel-root': {
     margin: 0,
     width: '100%',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     minHeight: '48px',
   },
@@ -147,6 +154,7 @@ const IndicatorCardContent = styled(CardContent)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing(1),
+    marginLeft: theme.spacing(1),
   },
 }));
 
@@ -178,10 +186,12 @@ const InfoTooltip = ({ title }) => (
 
 const IndicatorIcon = ({ type }) => {
   const icons = {
-    sma: <ShowChart />,
+    sma: <MultilineChart />,
     ema: <Timeline />,
-    rsi: <TrendingUp />,
-    bollinger: <BarChart />,
+    rsi: <WaterfallChart />,
+    macd: <SignalCellularAlt />,
+    bb: <Compress />,
+    adx: <Analytics />
   };
   return icons[type] || null;
 };
@@ -207,9 +217,24 @@ const BasicSettingsCard = styled(Card)(({ theme }) => ({
   },
 }));
 
+const BBComparisonType = {
+  ABOVE_UPPER: "ABOVE_UPPER",
+  BELOW_LOWER: "BELOW_LOWER",
+  CROSS_MIDDLE_UP: "CROSS_MIDDLE_UP",
+  CROSS_MIDDLE_DOWN: "CROSS_MIDDLE_DOWN"
+};
+
+const ADXComparisonType = {
+  ABOVE: "ABOVE",
+  BELOW: "BELOW",
+  DI_CROSS_ABOVE: "DI_CROSS_ABOVE",
+  DI_CROSS_BELOW: "DI_CROSS_BELOW"
+};
+
 const StrategyBuilder = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [strategy, setStrategy] = useState({
     symbol: '',
     start_date: '2024-01-01',
@@ -248,6 +273,18 @@ const StrategyBuilder = () => {
       histogram_positive: true,
       macd_comparison: 'ABOVE_ZERO',
       macd_signal_deviation_pct: 0.5
+    },
+    bb: {
+      enabled: false,
+      period: 20,
+      std_dev: 2.0,
+      comparison: BBComparisonType.ABOVE_UPPER
+    },
+    adx: {
+      enabled: false,
+      period: 14,
+      comparison: ADXComparisonType.ABOVE,
+      value: 25.0
     }
   });
 
@@ -619,9 +656,114 @@ const StrategyBuilder = () => {
     );
   };
 
+  const renderBBSettings = () => {
+    if (!indicatorSettings.bb.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Period"
+                type="number"
+                value={indicatorSettings.bb.period}
+                onChange={(e) => handleIndicatorSettingChange('bb', 'period', parseInt(e.target.value))}
+                InputProps={{
+                  inputProps: { 
+                    min: 1,
+                    step: 1
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Standard Deviation"
+                type="number"
+                value={indicatorSettings.bb.std_dev}
+                onChange={(e) => handleIndicatorSettingChange('bb', 'std_dev', parseFloat(e.target.value))}
+                InputProps={{
+                  inputProps: { 
+                    min: 0.1,
+                    step: 0.1
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Band Comparison</InputLabel>
+                <Select
+                  value={indicatorSettings.bb.comparison}
+                  onChange={(e) => handleIndicatorSettingChange('bb', 'comparison', e.target.value)}
+                  label="Band Comparison"
+                >
+                  <MenuItem value={BBComparisonType.ABOVE_UPPER}>Above Upper Band</MenuItem>
+                  <MenuItem value={BBComparisonType.BELOW_LOWER}>Below Lower Band</MenuItem>
+                  <MenuItem value={BBComparisonType.CROSS_MIDDLE_UP}>Cross Middle Band Upward</MenuItem>
+                  <MenuItem value={BBComparisonType.CROSS_MIDDLE_DOWN}>Cross Middle Band Downward</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
+  const renderADXSettings = () => {
+    if (!indicatorSettings.adx.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Period"
+                type="number"
+                value={indicatorSettings.adx.period}
+                onChange={(e) => handleIndicatorSettingChange('adx', 'period', parseInt(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Value"
+                type="number"
+                value={indicatorSettings.adx.value}
+                onChange={(e) => handleIndicatorSettingChange('adx', 'value', parseFloat(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Comparison</InputLabel>
+                <Select
+                  value={indicatorSettings.adx.comparison}
+                  onChange={(e) => handleIndicatorSettingChange('adx', 'comparison', e.target.value)}
+                  label="Comparison"
+                >
+                  <MenuItem value={ADXComparisonType.ABOVE}>Above Value</MenuItem>
+                  <MenuItem value={ADXComparisonType.BELOW}>Below Value</MenuItem>
+                  <MenuItem value={ADXComparisonType.DI_CROSS_ABOVE}>+DI Crosses Above -DI</MenuItem>
+                  <MenuItem value={ADXComparisonType.DI_CROSS_BELOW}>+DI Crosses Below -DI</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
     try {
       const requestBody = {
@@ -648,6 +790,16 @@ const StrategyBuilder = () => {
             macd_comparison: indicatorSettings.macd.macd_comparison,
             histogram_positive: indicatorSettings.macd.histogram_positive,
             macd_signal_deviation_pct: indicatorSettings.macd.macd_signal_deviation_pct
+          } : null,
+          bb_condition: indicatorSettings.bb.enabled ? {
+            period: indicatorSettings.bb.period,
+            std_dev: indicatorSettings.bb.std_dev,
+            comparison: indicatorSettings.bb.comparison
+          } : null,
+          adx_condition: indicatorSettings.adx.enabled ? {
+            period: indicatorSettings.adx.period,
+            comparison: indicatorSettings.adx.comparison,
+            value: indicatorSettings.adx.value
           } : null
         },
         exit_conditions: {
@@ -664,6 +816,8 @@ const StrategyBuilder = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';
       setError(typeof errorMessage === 'object' ? JSON.stringify(errorMessage) : errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -674,7 +828,7 @@ const StrategyBuilder = () => {
           control={
             <Checkbox
               checked={indicatorSettings[type].enabled}
-              onChange={() => handleIndicatorChange(type)}
+              onChange={() => handleIndicatorToggle(type)}
               color="primary"
             />
           }
@@ -693,339 +847,422 @@ const StrategyBuilder = () => {
     </IndicatorCard>
   );
 
+  const LoadingOverlay = () => (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+      }}
+    >
+      <CircularProgress size={60} />
+      <Typography
+        variant="h6"
+        sx={{
+          mt: 2,
+          color: 'primary.main',
+          fontWeight: 600,
+          textAlign: 'center'
+        }}
+      >
+        Analyzing Strategy
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-block',
+            animation: 'ellipsis-animation 1.5s infinite',
+            '@keyframes ellipsis-animation': {
+              '0%': { content: '"."' },
+              '33%': { content: '".."' },
+              '66%': { content: '"..."' },
+            },
+          }}
+        />
+      </Typography>
+    </Box>
+  );
+
   return (
-    <AnimatedSection>
-      <PageHeader>
-        <Box className="title-section">
-          <Typography variant="h3" gutterBottom sx={{ 
-            fontWeight: 700,
-            fontSize: '2.5rem',
-            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 2,
-          }}>
-            Create Your Trading Strategy!
-          </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '800px', lineHeight: 1.6 }}>
-            Welcome to the future of algorithmic trading. Design, test, and optimize your trading 
-            strategies using advanced technical indicators and real market data. Our platform 
-            empowers you to make data-driven decisions with confidence.
-          </Typography>
+    <>
+      {isLoading && <LoadingOverlay />}
+      <AnimatedSection>
+        <PageHeader>
+          <Box className="title-section">
+            <Typography variant="h3" gutterBottom sx={{ 
+              fontWeight: 700,
+              fontSize: '2.5rem',
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 2,
+            }}>
+              Create Your Trading Strategy!
+            </Typography>
+            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '800px', lineHeight: 1.6 }}>
+              Welcome to the future of algorithmic trading. Design, test, and optimize your trading 
+              strategies using advanced technical indicators and real market data. Our platform 
+              empowers you to make data-driven decisions with confidence.
+            </Typography>
+          </Box>
+        </PageHeader>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <SectionHeader>
+                Basic Settings
+              </SectionHeader>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={4}>
+                  <BasicSettingsCard>
+                    <TextField
+                      fullWidth
+                      label="Symbol"
+                      value={strategy.symbol}
+                      onChange={(e) => setStrategy({...strategy, symbol: e.target.value})}
+                      InputProps={{
+                        sx: { 
+                          fontSize: '1.1rem',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'transparent'
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'transparent'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main'
+                          }
+                        }
+                      }}
+                      InputLabelProps={{
+                        sx: { fontSize: '1.1rem' }
+                      }}
+                    />
+                  </BasicSettingsCard>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <BasicSettingsCard>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="Start Date"
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { fontSize: '1.1rem' }
+                      }}
+                      value={strategy.start_date}
+                      onChange={(e) => setStrategy({...strategy, start_date: e.target.value})}
+                      InputProps={{
+                        sx: { 
+                          fontSize: '1.1rem',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'transparent'
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'transparent'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main'
+                          }
+                        }
+                      }}
+                    />
+                  </BasicSettingsCard>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <BasicSettingsCard>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="End Date"
+                      InputLabelProps={{ 
+                        shrink: true,
+                        sx: { fontSize: '1.1rem' }
+                      }}
+                      value={strategy.end_date}
+                      onChange={(e) => setStrategy({...strategy, end_date: e.target.value})}
+                      InputProps={{
+                        sx: { 
+                          fontSize: '1.1rem',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'transparent'
+                          },
+                          '&:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'transparent'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'primary.main'
+                          }
+                        }
+                      }}
+                    />
+                  </BasicSettingsCard>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            <Grid item xs={12}>
+              <SectionHeader>
+                Trade Direction
+              </SectionHeader>
+              <TradeDirectionCard>
+                <FormControl component="fieldset">
+                  <RadioGroup
+                    row
+                    value={strategy.entry_conditions.trade_direction}
+                    onChange={(e) => setStrategy({
+                      ...strategy,
+                      entry_conditions: {
+                        ...strategy.entry_conditions,
+                        trade_direction: e.target.value
+                      }
+                    })}
+                  >
+                    <FormControlLabel 
+                      value="BUY" 
+                      control={<Radio />} 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <TrendingUp sx={{ color: 'success.main', mr: 1 }} />
+                          <Typography>Buy</Typography>
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel 
+                      value="SELL" 
+                      control={<Radio />} 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <TrendingDown sx={{ color: 'error.main', mr: 1 }} />
+                          <Typography>Sell</Typography>
+                        </Box>
+                      }
+                    />
+                  </RadioGroup>
+                </FormControl>
+              </TradeDirectionCard>
+            </Grid>
+
+            <Grid item xs={12}>
+              <SectionHeader>
+                Technical Indicators
+              </SectionHeader>
+              <Box sx={{ mb: 4 }}>
+                <IndicatorCard enabled={indicatorSettings.ma.enabled}>
+                  <IndicatorCardContent>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={indicatorSettings.ma.enabled}
+                          onChange={() => handleIndicatorToggle('ma')}
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <MultilineChart sx={{ mr: 1 }} />
+                          <Typography>Moving Average</Typography>
+                        </Box>
+                      }
+                    />
+                  </IndicatorCardContent>
+                  {renderMASettings()}
+                </IndicatorCard>
+                
+                <IndicatorCard enabled={indicatorSettings.rsi.enabled}>
+                  <IndicatorCardContent>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={indicatorSettings.rsi.enabled}
+                          onChange={() => handleIndicatorToggle('rsi')}
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <WaterfallChart sx={{ mr: 1 }} />
+                          <Typography>Relative Strength Index (RSI)</Typography>
+                        </Box>
+                      }
+                    />
+                  </IndicatorCardContent>
+                  {renderRSISettings()}
+                </IndicatorCard>
+
+                <IndicatorCard enabled={indicatorSettings.macd.enabled}>
+                  <IndicatorCardContent>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={indicatorSettings.macd.enabled}
+                          onChange={() => handleIndicatorToggle('macd')}
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <SignalCellularAlt sx={{ mr: 1 }} />
+                          <Typography>MACD</Typography>
+                        </Box>
+                      }
+                    />
+                  </IndicatorCardContent>
+                  {renderMACDSettings()}
+                </IndicatorCard>
+
+                <IndicatorCard enabled={indicatorSettings.bb.enabled}>
+                  <IndicatorCardContent>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={indicatorSettings.bb.enabled}
+                          onChange={() => handleIndicatorToggle('bb')}
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Compress sx={{ mr: 1 }} />
+                          <Typography>Bollinger Bands</Typography>
+                        </Box>
+                      }
+                    />
+                  </IndicatorCardContent>
+                  {renderBBSettings()}
+                </IndicatorCard>
+
+                <IndicatorCard enabled={indicatorSettings.adx.enabled}>
+                  <IndicatorCardContent>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={indicatorSettings.adx.enabled}
+                          onChange={() => handleIndicatorToggle('adx')}
+                        />
+                      }
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Analytics sx={{ mr: 1 }} />
+                          <Typography>Average Directional Index (ADX)</Typography>
+                        </Box>
+                      }
+                    />
+                  </IndicatorCardContent>
+                  {renderADXSettings()}
+                </IndicatorCard>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12}>
+              <SectionHeader>
+                Position Settings
+              </SectionHeader>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <PositionSettingCard>
+                    <Box sx={{ px: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        Position Size (%)
+                        <InfoTooltip title="Percentage of capital to use per trade" />
+                      </Typography>
+                      <StyledSlider
+                        value={strategy.position_size}
+                        onChange={(e) => setStrategy({
+                          ...strategy,
+                          exit_conditions: {
+                            ...strategy.exit_conditions,
+                            position_size_pct: e.target.value
+                          }
+                        })}
+                        min={1}
+                        max={100}
+                        valueLabelDisplay="auto"
+                        sx={{ mt: 2 }}
+                      />
+                    </Box>
+                  </PositionSettingCard>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <PositionSettingCard>
+                    <Box sx={{ px: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        Take Profit (%)
+                        <InfoTooltip title="Target profit percentage" />
+                      </Typography>
+                      <StyledSlider
+                        value={strategy.take_profit}
+                        onChange={(e) => setStrategy({
+                          ...strategy,
+                          exit_conditions: {
+                            ...strategy.exit_conditions,
+                            take_profit_pct: e.target.value
+                          }
+                        })}
+                        min={0.5}
+                        max={20}
+                        step={0.5}
+                        valueLabelDisplay="auto"
+                        sx={{ mt: 2 }}
+                      />
+                    </Box>
+                  </PositionSettingCard>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <PositionSettingCard>
+                    <Box sx={{ px: 2 }}>
+                      <Typography variant="h6" gutterBottom>
+                        Stop Loss (%)
+                        <InfoTooltip title="Maximum loss percentage" />
+                      </Typography>
+                      <StyledSlider
+                        value={strategy.stop_loss}
+                        onChange={(e) => setStrategy({
+                          ...strategy,
+                          exit_conditions: {
+                            ...strategy.exit_conditions,
+                            stop_loss_pct: e.target.value
+                          }
+                        })}
+                        min={0.5}
+                        max={20}
+                        step={0.5}
+                        valueLabelDisplay="auto"
+                        sx={{ mt: 2 }}
+                      />
+                    </Box>
+                  </PositionSettingCard>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            <Grid item xs={12}>
+              <GradientButton
+                type="submit"
+                variant="contained"
+                size="large"
+                fullWidth
+                sx={{ mt: 2 }}
+              >
+                Run Backtest
+              </GradientButton>
+            </Grid>
+          </Grid>
         </Box>
-      </PageHeader>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Box component="form" onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <SectionHeader>
-              Basic Settings
-            </SectionHeader>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={4}>
-                <BasicSettingsCard>
-                  <TextField
-                    fullWidth
-                    label="Symbol"
-                    value={strategy.symbol}
-                    onChange={(e) => setStrategy({...strategy, symbol: e.target.value})}
-                    InputProps={{
-                      sx: { 
-                        fontSize: '1.1rem',
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'transparent'
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'transparent'
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'primary.main'
-                        }
-                      }
-                    }}
-                    InputLabelProps={{
-                      sx: { fontSize: '1.1rem' }
-                    }}
-                  />
-                </BasicSettingsCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <BasicSettingsCard>
-                  <TextField
-                    fullWidth
-                    type="date"
-                    label="Start Date"
-                    InputLabelProps={{ 
-                      shrink: true,
-                      sx: { fontSize: '1.1rem' }
-                    }}
-                    value={strategy.start_date}
-                    onChange={(e) => setStrategy({...strategy, start_date: e.target.value})}
-                    InputProps={{
-                      sx: { 
-                        fontSize: '1.1rem',
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'transparent'
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'transparent'
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'primary.main'
-                        }
-                      }
-                    }}
-                  />
-                </BasicSettingsCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <BasicSettingsCard>
-                  <TextField
-                    fullWidth
-                    type="date"
-                    label="End Date"
-                    InputLabelProps={{ 
-                      shrink: true,
-                      sx: { fontSize: '1.1rem' }
-                    }}
-                    value={strategy.end_date}
-                    onChange={(e) => setStrategy({...strategy, end_date: e.target.value})}
-                    InputProps={{
-                      sx: { 
-                        fontSize: '1.1rem',
-                        '& .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'transparent'
-                        },
-                        '&:hover .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'transparent'
-                        },
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                          borderColor: 'primary.main'
-                        }
-                      }
-                    }}
-                  />
-                </BasicSettingsCard>
-              </Grid>
-            </Grid>
-          </Grid>
-
-          <Grid item xs={12}>
-            <SectionHeader>
-              Trade Direction
-            </SectionHeader>
-            <TradeDirectionCard>
-              <FormControl component="fieldset">
-                <RadioGroup
-                  row
-                  value={strategy.entry_conditions.trade_direction}
-                  onChange={(e) => setStrategy({
-                    ...strategy,
-                    entry_conditions: {
-                      ...strategy.entry_conditions,
-                      trade_direction: e.target.value
-                    }
-                  })}
-                >
-                  <FormControlLabel 
-                    value="BUY" 
-                    control={<Radio />} 
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TrendingUp sx={{ color: 'success.main', mr: 1 }} />
-                        <Typography>Buy</Typography>
-                      </Box>
-                    }
-                  />
-                  <FormControlLabel 
-                    value="SELL" 
-                    control={<Radio />} 
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TrendingDown sx={{ color: 'error.main', mr: 1 }} />
-                        <Typography>Sell</Typography>
-                      </Box>
-                    }
-                  />
-                </RadioGroup>
-              </FormControl>
-            </TradeDirectionCard>
-          </Grid>
-
-          <Grid item xs={12}>
-            <SectionHeader>
-              Technical Indicators
-            </SectionHeader>
-            <Box sx={{ mb: 4 }}>
-              <IndicatorCard enabled={indicatorSettings.ma.enabled}>
-                <CardContent>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={indicatorSettings.ma.enabled}
-                        onChange={() => handleIndicatorChange('ma')}
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ShowChart sx={{ mr: 1 }} />
-                        <Typography>Moving Average</Typography>
-                      </Box>
-                    }
-                  />
-                </CardContent>
-                {renderMASettings()}
-              </IndicatorCard>
-              
-              <IndicatorCard enabled={indicatorSettings.rsi.enabled}>
-                <CardContent>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={indicatorSettings.rsi.enabled}
-                        onChange={() => handleIndicatorChange('rsi')}
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TrendingUp sx={{ mr: 1 }} />
-                        <Typography>Relative Strength Index (RSI)</Typography>
-                      </Box>
-                    }
-                  />
-                </CardContent>
-                {renderRSISettings()}
-              </IndicatorCard>
-
-              <IndicatorCard enabled={indicatorSettings.macd.enabled}>
-                <CardContent>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={indicatorSettings.macd.enabled}
-                        onChange={() => handleIndicatorChange('macd')}
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ShowChart sx={{ mr: 1 }} />
-                        <Typography>Moving Average Convergence Divergence (MACD)</Typography>
-                      </Box>
-                    }
-                  />
-                </CardContent>
-                {renderMACDSettings()}
-              </IndicatorCard>
-            </Box>
-          </Grid>
-
-          <Grid item xs={12}>
-            <SectionHeader>
-              Position Settings
-            </SectionHeader>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <PositionSettingCard>
-                  <Box sx={{ px: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Position Size (%)
-                      <InfoTooltip title="Percentage of capital to use per trade" />
-                    </Typography>
-                    <StyledSlider
-                      value={strategy.position_size}
-                      // onChange={(e, newValue) => setStrategy({...strategy, position_size: newValue})}
-                      onChange={(e) => setStrategy({
-                        ...strategy,
-                        exit_conditions: {
-                          ...strategy.exit_conditions,
-                          position_size_pct: e.target.value
-                        }
-                      })}
-                      min={1}
-                      max={100}
-                      valueLabelDisplay="auto"
-                      sx={{ mt: 2 }}
-                    />
-                  </Box>
-                </PositionSettingCard>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <PositionSettingCard>
-                  <Box sx={{ px: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Take Profit (%)
-                      <InfoTooltip title="Target profit percentage" />
-                    </Typography>
-                    <StyledSlider
-                      value={strategy.take_profit}
-                      // onChange={(e, newValue) => setStrategy({...strategy, take_profit: newValue})}
-                      onChange={(e) => setStrategy({
-                        ...strategy,
-                        exit_conditions: {
-                          ...strategy.exit_conditions,
-                          take_profit_pct: e.target.value
-                        }
-                      })}
-                      min={0.5}
-                      max={20}
-                      step={0.5}
-                      valueLabelDisplay="auto"
-                      sx={{ mt: 2 }}
-                    />
-                  </Box>
-                </PositionSettingCard>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <PositionSettingCard>
-                  <Box sx={{ px: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Stop Loss (%)
-                      <InfoTooltip title="Maximum loss percentage" />
-                    </Typography>
-                    <StyledSlider
-                      value={strategy.stop_loss}
-                      // onChange={(e, newValue) => setStrategy({...strategy, stop_loss: newValue})}
-                      onChange={(e) => setStrategy({
-                        ...strategy,
-                        exit_conditions: {
-                          ...strategy.exit_conditions,
-                          stop_loss_pct: e.target.value
-                        }
-                      })}
-                      min={0.5}
-                      max={20}
-                      step={0.5}
-                      valueLabelDisplay="auto"
-                      sx={{ mt: 2 }}
-                    />
-                  </Box>
-                </PositionSettingCard>
-              </Grid>
-            </Grid>
-          </Grid>
-
-          <Grid item xs={12}>
-            <GradientButton
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-              sx={{ mt: 2 }}
-            >
-              Run Backtest
-            </GradientButton>
-          </Grid>
-        </Grid>
-      </Box>
-    </AnimatedSection>
+      </AnimatedSection>
+    </>
   );
 };
 
