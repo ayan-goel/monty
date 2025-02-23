@@ -9,6 +9,10 @@ from enum import Enum
 from fastapi.middleware.cors import CORSMiddleware
 from core.monte_carlo import MonteCarloSimulator
 from core.helpers.backtest_service import BacktestRequest
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI(
     title="Monty",
@@ -640,6 +644,47 @@ async def run_monte_carlo(request: Dict[str, Any]):
         }
         
         return results_dict
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/monte-carlo-analysis")
+async def analyze_monte_carlo_results(request: Dict[str, Any]):
+    try:
+        results = request.get('results')
+        strategy = request.get('strategy')
+        genai.configure(api_key="AIzaSyBXYZL4CjM3i3yh_gpbAbSerzsK-1CcjC0")
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""
+        Analyze these Monte Carlo simulation results and provide specific recommendations:
+        
+        Results:
+        - Average Return: {results['avg_return']}%
+        - Median Return: {results['median_return']}%
+        - Win Rate: {results['win_rate']}%
+        - Average Drawdown: {results['avg_drawdown']}%
+        - Worst Drawdown: {results['worst_drawdown']}%
+        - Sharpe Ratio: {results['sharpe_ratio']}
+        
+        Strategy Settings:
+        - Entry Indicators: {strategy['entry_conditions']}
+        - Exit Conditions: Stop Loss {strategy['exit_conditions']['stop_loss_pct']}%, Take Profit {strategy['exit_conditions']['take_profit_pct']}%
+        - Position Size: {strategy['exit_conditions']['position_size_pct']}%
+        
+        Provide targeted advice for:
+        1. Risk management adjustments
+        2. Entry/exit condition optimization
+        3. Position sizing recommendations
+        Keep feedback specific and data-driven. 
+        Don't bother sending the simulation results again since I've already displayed it myself.
+        """
+
+        response = model.generate_content(prompt)
+        print("Response generated")
+
+        return {
+            'analysis': response.text
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

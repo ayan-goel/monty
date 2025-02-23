@@ -11,6 +11,8 @@
 # production
 /build
 
+/Users/abhigudeti/Documents/GitHub/monty/backend/.env
+
 # misc
 .DS_Store
 .env.local
