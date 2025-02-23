@@ -241,6 +241,13 @@ const StrategyBuilder = () => {
       period: 14,
       comparison: 'BELOW',
       value: 30
+    },
+    macd: {
+      enabled: false,
+      crossover: 'BULLISH',
+      histogram_positive: true,
+      macd_comparison: 'ABOVE_ZERO',
+      macd_signal_deviation_pct: 0.5
     }
   });
 
@@ -551,6 +558,67 @@ const StrategyBuilder = () => {
     );
   };
 
+  const renderMACDSettings = () => {
+    if (!indicatorSettings.macd.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Crossover Type</InputLabel>
+                <Select
+                  value={indicatorSettings.macd.crossover}
+                  onChange={(e) => handleIndicatorSettingChange('macd', 'crossover', e.target.value)}
+                  label="Crossover Type"
+                >
+                  <MenuItem value="BULLISH">Bullish Crossover</MenuItem>
+                  <MenuItem value="BEARISH">Bearish Crossover</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>MACD Position</InputLabel>
+                <Select
+                  value={indicatorSettings.macd.macd_comparison}
+                  onChange={(e) => handleIndicatorSettingChange('macd', 'macd_comparison', e.target.value)}
+                  label="MACD Position"
+                >
+                  <MenuItem value="ABOVE_ZERO">Above Zero</MenuItem>
+                  <MenuItem value="BELOW_ZERO">Below Zero</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Signal Deviation (%)"
+                type="number"
+                value={indicatorSettings.macd.macd_signal_deviation_pct}
+                onChange={(e) => handleIndicatorSettingChange('macd', 'macd_signal_deviation_pct', parseFloat(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Histogram</InputLabel>
+                <Select
+                  value={indicatorSettings.macd.histogram_positive ? "POSITIVE" : "NEGATIVE"}
+                  onChange={(e) => handleIndicatorSettingChange('macd', 'histogram_positive', e.target.value === "POSITIVE")}
+                  label="Histogram"
+                >
+                  <MenuItem value="POSITIVE">Positive</MenuItem>
+                  <MenuItem value="NEGATIVE">Negative</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -574,6 +642,12 @@ const StrategyBuilder = () => {
             period: indicatorSettings.rsi.period,
             comparison: indicatorSettings.rsi.comparison,
             value: indicatorSettings.rsi.value
+          } : null,
+          macd_condition: indicatorSettings.macd.enabled ? {
+            crossover: indicatorSettings.macd.crossover,
+            macd_comparison: indicatorSettings.macd.macd_comparison,
+            histogram_positive: indicatorSettings.macd.histogram_positive,
+            macd_signal_deviation_pct: indicatorSettings.macd.macd_signal_deviation_pct
           } : null
         },
         exit_conditions: {
@@ -827,6 +901,26 @@ const StrategyBuilder = () => {
                   />
                 </CardContent>
                 {renderRSISettings()}
+              </IndicatorCard>
+
+              <IndicatorCard enabled={indicatorSettings.macd.enabled}>
+                <CardContent>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={indicatorSettings.macd.enabled}
+                        onChange={() => handleIndicatorChange('macd')}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <ShowChart sx={{ mr: 1 }} />
+                        <Typography>Moving Average Convergence Divergence (MACD)</Typography>
+                      </Box>
+                    }
+                  />
+                </CardContent>
+                {renderMACDSettings()}
               </IndicatorCard>
             </Box>
           </Grid>

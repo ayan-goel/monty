@@ -60,6 +60,22 @@ class MAComparisonType(str, Enum):
     ABOVE = "ABOVE"
     BELOW = "BELOW"
 
+class MACDCrossoverType(str, Enum):
+    BULLISH = "BULLISH"  # MACD crosses above Signal Line
+    BEARISH = "BEARISH"  # MACD crosses below Signal Line
+
+class MACDComparisonType(str, Enum):
+    ABOVE_ZERO = "ABOVE_ZERO"  # MACD above zero line
+    BELOW_ZERO = "BELOW_ZERO"  # MACD below zero line
+    HISTOGRAM_POSITIVE = "HISTOGRAM_POSITIVE"  # Histogram > 0
+    HISTOGRAM_NEGATIVE = "HISTOGRAM_NEGATIVE"  # Histogram < 0
+
+class MACDCondition(BaseModel):
+    crossover: Optional[MACDCrossoverType] = None  
+    macd_comparison: Optional[MACDComparisonType] = None  
+    histogram_positive: Optional[bool] = None  
+    macd_signal_deviation_pct: Optional[float] = None 
+
 class MACondition(BaseModel):
     period: int = 20
     ma_type: MAType
@@ -74,6 +90,7 @@ class RSICondition(BaseModel):
 class EntryCondition(BaseModel):
     ma_condition: Optional[MACondition] = None
     rsi_condition: Optional[RSICondition] = None
+    macd_condition: Optional[MACDCondition] = None
     trade_direction: TradeDirection
 
 class ExitCondition(BaseModel):

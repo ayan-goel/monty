@@ -197,6 +197,7 @@ class BacktestService:
                              entry_conditions: EntryCondition) -> Optional[TradeDirection]:
         ma_condition_met = False
         rsi_condition_met = False
+        macd_condition_met = False
         
         if entry_conditions.ma_condition:
             ma_cond = entry_conditions.ma_condition
@@ -223,9 +224,33 @@ class BacktestService:
             else:
                 rsi_condition_met = row[rsi_col] < rsi_cond.value
 
+        if entry_conditions.macd_condition:
+            macd_cond = entry_conditions.macd_condition
+            conditions_met = []
+
+            if macd_cond.crossover:
+                if macd_cond.crossover == MACDCrossoverType.BULLISH:
+                    conditions_met.append(row['MACD_Crossover'])
+                elif macd_cond.crossover == MACDCrossoverType.BEARISH:
+                    conditions_met.append(row['MACD_Crossover'])
+
+            if macd_cond.histogram_positive is not None:
+                conditions_met.append(row['MACD_Histogram_Positive'] == macd_cond.histogram_positive)
+
+            if macd_cond.macd_comparison:
+                if macd_cond.macd_comparison == MACDComparisonType.ABOVE_ZERO:
+                    conditions_met.append(row['MACD'] > 0)
+                elif macd_cond.macd_comparison == MACDComparisonType.BELOW_ZERO:
+                    conditions_met.append(row['MACD'] < 0)
+
+            if macd_cond.macd_signal_deviation_pct:
+                conditions_met.append(row['MACD_Signal_Deviation'])
+
+            macd_condition_met = all(conditions_met) if conditions_met else True
 
         if ((entry_conditions.ma_condition is None or ma_condition_met) and 
-            (entry_conditions.rsi_condition is None or rsi_condition_met)):
+            (entry_conditions.rsi_condition is None or rsi_condition_met) and
+            (entry_conditions.macd_condition is None or macd_condition_met)):
             return entry_conditions.trade_direction
         
         return None
@@ -351,13 +376,19 @@ class BacktestService:
             }
 
     def _calculate_max_drawdown(self, equity_curve: List[float]) -> float:
-        peak = equity_curve[0]
-        max_drawdown = 0
+        if not equity_curve:
+            return 0.0
+            
+        peak = float('-inf')
+        max_drawdown = 0.0
+        
         for equity in equity_curve:
             if equity > peak:
                 peak = equity
-            drawdown = (peak - equity) / peak * 100
-            max_drawdown = max(max_drawdown, drawdown)
+            if peak > 0:  # Ensure we don't divide by zero
+                drawdown = (peak - equity) / peak * 100
+                max_drawdown = max(max_drawdown, drawdown)
+                
         return max_drawdown
 
 backtest_service = BacktestService()

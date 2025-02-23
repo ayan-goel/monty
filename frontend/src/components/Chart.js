@@ -35,12 +35,43 @@ const Chart = ({ data }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (data?.returns) {
+      data.returns.forEach((value, index) => {
+        if (index > 0 && value < data.returns[index - 1]) {
+          console.warn(`Decrease detected at index ${index}:`, {
+            date: data.dates[index],
+            previousValue: data.returns[index - 1],
+            currentValue: value,
+            difference: value - data.returns[index - 1]
+          });
+        }
+      });
+    }
+  }, [data]);
+
+  const sortedData = React.useMemo(() => {
+    if (!data?.dates || !data?.returns) return data;
+    
+    const pairs = data.dates.map((date, index) => ({
+      date,
+      value: data.returns[index]
+    }));
+    
+    pairs.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    return {
+      dates: pairs.map(p => p.date),
+      returns: pairs.map(p => p.value)
+    };
+  }, [data]);
+
   const chartData = {
-    labels: data.dates,
+    labels: sortedData.dates,
     datasets: [
       {
         label: 'Portfolio Value',
-        data: data.returns,
+        data: sortedData.returns,
         fill: true,
         backgroundColor: 'rgba(33, 150, 243, 0.1)',
         borderColor: 'rgba(33, 150, 243, 1)',
