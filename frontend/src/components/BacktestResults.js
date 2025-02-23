@@ -1,6 +1,6 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Box, Grid, Typography, Card, CardContent } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Grid, Typography, Card, CardContent, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
   TrendingUp, 
@@ -10,7 +10,8 @@ import {
   Speed,
   AttachMoney,
   ShowChart,
-  Percent
+  Percent,
+  ArrowBack
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import {
@@ -100,6 +101,7 @@ const ErrorBox = styled(Box)(({ theme }) => ({
 }));
 
 const BacktestResults = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const results = location.state?.results;
 
@@ -206,141 +208,168 @@ const BacktestResults = () => {
   };
 
   return (
-    <Box sx={{ py: 4 }}>
-      <Grid container spacing={3}>
-        {/* Performance Overview */}
-        <Grid item xs={12}>
-          <StatCard>
-            <CardContent>
-              <StatHeader>
-                <ShowChart />
-                <Typography variant="h6">Performance Overview</Typography>
-              </StatHeader>
-              <Box sx={{ height: '400px' }}>
-                <Line data={chartData} options={chartOptions} />
-              </Box>
-            </CardContent>
-          </StatCard>
-        </Grid>
+    <Box>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        mb: 4 
+      }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/')}
+          variant="outlined"
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontSize: '1rem',
+            py: 1,
+            px: 2,
+            '&:hover': {
+              backgroundColor: 'rgba(33, 150, 243, 0.08)',
+            },
+          }}
+        >
+          Back to Strategy Builder
+        </Button>
+      </Box>
 
-        {/* Key Statistics */}
-        <Grid item xs={12} md={6}>
-          <StatCard>
-            <CardContent>
-              <StatHeader>
-                <Assessment />
-                <Typography variant="h6">Key Statistics</Typography>
-              </StatHeader>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Total Return
-                    </Typography>
-                    <StatValue positive={results.total_return_pct > 0}>
-                      {results.total_return_pct.toFixed(2)}%
-                    </StatValue>
-                  </StatItem>
-                </Grid>
-                <Grid item xs={6}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Initial Capital
-                    </Typography>
-                    <Typography className="stat-value" color="primary">
-                      ${results.initial_capital.toLocaleString()}
-                    </Typography>
-                  </StatItem>
-                </Grid>
-                <Grid item xs={6}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Final Capital
-                    </Typography>
-                    <Typography className="stat-value" color="primary">
-                      ${results.final_capital.toLocaleString()}
-                    </Typography>
-                  </StatItem>
-                </Grid>
-                <Grid item xs={6}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Max Drawdown
-                    </Typography>
-                    <Typography className="stat-value" color="error">
-                      {results.max_drawdown_pct.toFixed(2)}%
-                    </Typography>
-                  </StatItem>
-                </Grid>
-                <Grid item xs={6}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Win Rate
-                    </Typography>
-                    <Typography className="stat-value" color="primary">
-                      {results.win_rate.toFixed(2)}%
-                    </Typography>
-                  </StatItem>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </StatCard>
-        </Grid>
+      <Box sx={{ py: 4 }}>
+        <Grid container spacing={3}>
+          {/* Performance Overview */}
+          <Grid item xs={12}>
+            <StatCard>
+              <CardContent>
+                <StatHeader>
+                  <ShowChart />
+                  <Typography variant="h6">Performance Overview</Typography>
+                </StatHeader>
+                <Box sx={{ height: '400px' }}>
+                  <Line data={chartData} options={chartOptions} />
+                </Box>
+              </CardContent>
+            </StatCard>
+          </Grid>
 
-        {/* Trade Analysis */}
-        <Grid item xs={12} md={6}>
-          <StatCard>
-            <CardContent>
-              <StatHeader>
-                <Timeline />
-                <Typography variant="h6">Trade Analysis</Typography>
-              </StatHeader>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Total Trades
-                    </Typography>
-                    <Typography className="stat-value">
-                      {results.total_trades}
-                    </Typography>
-                  </StatItem>
+          {/* Key Statistics */}
+          <Grid item xs={12} md={6}>
+            <StatCard>
+              <CardContent>
+                <StatHeader>
+                  <Assessment />
+                  <Typography variant="h6">Key Statistics</Typography>
+                </StatHeader>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Total Return
+                      </Typography>
+                      <StatValue positive={results.total_return_pct > 0}>
+                        {results.total_return_pct.toFixed(2)}%
+                      </StatValue>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Initial Capital
+                      </Typography>
+                      <Typography className="stat-value" color="primary">
+                        ${results.initial_capital.toLocaleString()}
+                      </Typography>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Final Capital
+                      </Typography>
+                      <Typography className="stat-value" color="primary">
+                        ${results.final_capital.toLocaleString()}
+                      </Typography>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Max Drawdown
+                      </Typography>
+                      <Typography className="stat-value" color="error">
+                        {results.max_drawdown_pct.toFixed(2)}%
+                      </Typography>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Win Rate
+                      </Typography>
+                      <Typography className="stat-value" color="primary">
+                        {results.win_rate.toFixed(2)}%
+                      </Typography>
+                    </StatItem>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Winning Trades
-                    </Typography>
-                    <Typography className="stat-value" color="success.main">
-                      {results.winning_trades}
-                    </Typography>
-                  </StatItem>
+              </CardContent>
+            </StatCard>
+          </Grid>
+
+          {/* Trade Analysis */}
+          <Grid item xs={12} md={6}>
+            <StatCard>
+              <CardContent>
+                <StatHeader>
+                  <Timeline />
+                  <Typography variant="h6">Trade Analysis</Typography>
+                </StatHeader>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Total Trades
+                      </Typography>
+                      <Typography className="stat-value">
+                        {results.total_trades}
+                      </Typography>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Winning Trades
+                      </Typography>
+                      <Typography className="stat-value" color="success.main">
+                        {results.winning_trades}
+                      </Typography>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Average Profit
+                      </Typography>
+                      <Typography className="stat-value" color="success.main">
+                        ${results.avg_profit.toFixed(2)}
+                      </Typography>
+                    </StatItem>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <StatItem>
+                      <Typography className="stat-label">
+                        Average Loss
+                      </Typography>
+                      <Typography className="stat-value" color="error.main">
+                        ${Math.abs(results.avg_loss).toFixed(2)}
+                      </Typography>
+                    </StatItem>
+                  </Grid>
                 </Grid>
-                <Grid item xs={6}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Average Profit
-                    </Typography>
-                    <Typography className="stat-value" color="success.main">
-                      ${results.avg_profit.toFixed(2)}
-                    </Typography>
-                  </StatItem>
-                </Grid>
-                <Grid item xs={6}>
-                  <StatItem>
-                    <Typography className="stat-label">
-                      Average Loss
-                    </Typography>
-                    <Typography className="stat-value" color="error.main">
-                      ${Math.abs(results.avg_loss).toFixed(2)}
-                    </Typography>
-                  </StatItem>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </StatCard>
+              </CardContent>
+            </StatCard>
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </Box>
   );
 };
