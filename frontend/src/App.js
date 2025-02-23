@@ -43,7 +43,7 @@ function App() {
           <Container maxWidth="lg">
             <Toolbar disableGutters>
               <Logo variant="h3">
-                Monty
+                Monty.
               </Logo>
             </Toolbar>
           </Container>
