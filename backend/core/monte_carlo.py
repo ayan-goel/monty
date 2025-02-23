@@ -181,7 +181,6 @@ class MonteCarloSimulator:
         return 0
     
     def generate_simulation_data(self, historical_data: pd.DataFrame, entry_conditions) -> pd.DataFrame:
-        """Generate simulated data with additional validation"""
         try:
             if historical_data.empty:
                 raise ValueError("Historical data is empty")
@@ -191,22 +190,18 @@ class MonteCarloSimulator:
             if missing_columns:
                 raise ValueError(f"Missing required columns: {missing_columns}")
                     
-            # Calculate daily returns
             returns = historical_data['Close'].pct_change().dropna()
             if len(returns) == 0:
                 raise ValueError("No valid returns calculated from historical data")
             
-            # Remove extreme outliers (more than 5 standard deviations)
             std_dev = returns.std()
             returns = returns[abs(returns) <= 5 * std_dev]
             
-            if len(returns) < 100:  # Ensure sufficient data points
+            if len(returns) < 100:
                 raise ValueError("Insufficient valid return data points after filtering")
                     
-            # Generate random returns using numpy's choice
             random_returns = np.random.choice(returns.values, size=self.simulation_length_days)
             
-            # Create simulated price series
             initial_price = historical_data['Close'].iloc[-1]
             if pd.isna(initial_price) or initial_price <= 0:
                 raise ValueError("Invalid initial price")
@@ -214,37 +209,60 @@ class MonteCarloSimulator:
             prices = [initial_price]
             for r in random_returns:
                 new_price = prices[-1] * (1 + r)
-                if new_price <= 0:  # Ensure no negative prices
-                    new_price = prices[-1] * 0.5  # Limit downside to 50%
+                if new_price <= 0:
+                    new_price = prices[-1] * 0.5
                 prices.append(new_price)
             
-            # Create DataFrame with OHLC data
             dates = pd.date_range(start=datetime.now(), periods=self.simulation_length_days + 1, freq='B')
             simulated_data = pd.DataFrame(index=dates)
             simulated_data['Close'] = prices
             
-            # Generate synthetic OHLC data
             simulated_data['Open'] = simulated_data['Close'].shift(1)
-            simulated_data['High'] = simulated_data[['Open', 'Close']].max(axis=1) * 1.002  # Add 0.2% for spread
-            simulated_data['Low'] = simulated_data[['Open', 'Close']].min(axis=1) * 0.998   # Subtract 0.2% for spread
+            simulated_data['High'] = simulated_data[['Open', 'Close']].max(axis=1) * 1.002
+            simulated_data['Low'] = simulated_data[['Open', 'Close']].min(axis=1) * 0.998
             
-            # Fill first row's Open price
             simulated_data.iloc[0, simulated_data.columns.get_loc('Open')] = initial_price
-            
+
+            # Add indicators based on entry conditions
             if entry_conditions.ma_condition:
                 ma_cond = entry_conditions.ma_condition
                 period = ma_cond.period
                 
                 if ma_cond.ma_type == "SMA":
                     simulated_data[f'MA_{period}'] = simulated_data['Close'].rolling(window=period).mean()
-                else:  # EMA
+                else:
                     simulated_data[f'MA_{period}'] = simulated_data['Close'].ewm(span=period, adjust=False).mean()
                     
                 deviation = ma_cond.deviation_pct / 100
                 simulated_data[f'MA_{period}_upper'] = simulated_data[f'MA_{period}'] * (1 + deviation)
                 simulated_data[f'MA_{period}_lower'] = simulated_data[f'MA_{period}'] * (1 - deviation)
-            
-            
+
+            if entry_conditions.rsi_condition:
+                period = entry_conditions.rsi_condition.period
+                simulated_data[f'RSI_{period}'] = self.calculate_rsi(simulated_data, period)
+
+            if entry_conditions.macd_condition:
+                simulated_data['MACD'] = self.calculate_macd(simulated_data)
+                simulated_data['Signal_Line'] = self.calculate_signal_line(simulated_data)
+                simulated_data['MACD_Histogram'] = simulated_data['MACD'] - simulated_data['Signal_Line']
+                
+                if hasattr(entry_conditions.macd_condition, 'crossover'):
+                    if entry_conditions.macd_condition.crossover == "BULLISH":
+                        simulated_data['MACD_Crossover'] = (simulated_data['MACD'].shift(1) < simulated_data['Signal_Line'].shift(1)) & (simulated_data['MACD'] > simulated_data['Signal_Line'])
+                    elif entry_conditions.macd_condition.crossover == "BEARISH":
+                        simulated_data['MACD_Crossover'] = (simulated_data['MACD'].shift(1) > simulated_data['Signal_Line'].shift(1)) & (simulated_data['MACD'] < simulated_data['Signal_Line'])
+
+            if entry_conditions.bb_condition:
+                bb_cond = entry_conditions.bb_condition
+                bb_df = self.calculate_bollinger_bands(simulated_data, bb_cond.period, bb_cond.std_dev)
+                for col in bb_df.columns:
+                    simulated_data[col] = bb_df[col]
+
+            if entry_conditions.adx_condition:
+                period = entry_conditions.adx_condition.period
+                adx = self.calculate_adx(simulated_data, period)
+                simulated_data['ADX'] = adx
+                
             return simulated_data.dropna()
             
         except Exception as e:

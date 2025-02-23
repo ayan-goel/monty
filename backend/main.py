@@ -298,8 +298,7 @@ class BacktestService:
 
         return df
 
-    def check_entry_conditions(self, row: pd.Series, prev_row: pd.Series, 
-                             entry_conditions: EntryCondition) -> Optional[TradeDirection]:
+    def check_entry_conditions(self, row: pd.Series, prev_row: pd.Series, entry_conditions: EntryCondition) -> Optional[TradeDirection]:
         ma_condition_met = False
         rsi_condition_met = False
         macd_condition_met = False
