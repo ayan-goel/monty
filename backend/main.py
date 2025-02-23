@@ -79,8 +79,6 @@ class BBCondition(BaseModel):
     period: int = 20
     std_dev: float = 2.0
     comparison: BBComparisonType
-    use_bandwidth: bool = False
-    bandwidth_threshold: Optional[float] = None
 
 class ADXCondition(BaseModel):
     period: int = 14

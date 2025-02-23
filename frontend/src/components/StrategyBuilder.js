@@ -34,6 +34,12 @@ import {
   Info,
   TrendingUp,
   TrendingDown,
+  Speed,
+  SignalCellularAlt,
+  WaterfallChart,
+  Compress,
+  Analytics,
+  MultilineChart
 } from '@mui/icons-material';
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -137,7 +143,7 @@ const IndicatorCardContent = styled(CardContent)(({ theme }) => ({
   '& .MuiFormControlLabel-root': {
     margin: 0,
     width: '100%',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     minHeight: '48px',
   },
@@ -147,6 +153,7 @@ const IndicatorCardContent = styled(CardContent)(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing(1),
+    marginLeft: theme.spacing(1),
   },
 }));
 
@@ -178,10 +185,12 @@ const InfoTooltip = ({ title }) => (
 
 const IndicatorIcon = ({ type }) => {
   const icons = {
-    sma: <ShowChart />,
+    sma: <MultilineChart />,
     ema: <Timeline />,
-    rsi: <TrendingUp />,
-    bollinger: <BarChart />,
+    rsi: <WaterfallChart />,
+    macd: <SignalCellularAlt />,
+    bb: <Compress />,
+    adx: <Analytics />
   };
   return icons[type] || null;
 };
@@ -206,6 +215,20 @@ const BasicSettingsCard = styled(Card)(({ theme }) => ({
     boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
   },
 }));
+
+const BBComparisonType = {
+  ABOVE_UPPER: "ABOVE_UPPER",
+  BELOW_LOWER: "BELOW_LOWER",
+  CROSS_MIDDLE_UP: "CROSS_MIDDLE_UP",
+  CROSS_MIDDLE_DOWN: "CROSS_MIDDLE_DOWN"
+};
+
+const ADXComparisonType = {
+  ABOVE: "ABOVE",
+  BELOW: "BELOW",
+  DI_CROSS_ABOVE: "DI_CROSS_ABOVE",
+  DI_CROSS_BELOW: "DI_CROSS_BELOW"
+};
 
 const StrategyBuilder = () => {
   const navigate = useNavigate();
@@ -248,6 +271,18 @@ const StrategyBuilder = () => {
       histogram_positive: true,
       macd_comparison: 'ABOVE_ZERO',
       macd_signal_deviation_pct: 0.5
+    },
+    bb: {
+      enabled: false,
+      period: 20,
+      std_dev: 2.0,
+      comparison: BBComparisonType.ABOVE_UPPER
+    },
+    adx: {
+      enabled: false,
+      period: 14,
+      comparison: ADXComparisonType.ABOVE,
+      value: 25.0
     }
   });
 
@@ -619,6 +654,110 @@ const StrategyBuilder = () => {
     );
   };
 
+  const renderBBSettings = () => {
+    if (!indicatorSettings.bb.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Period"
+                type="number"
+                value={indicatorSettings.bb.period}
+                onChange={(e) => handleIndicatorSettingChange('bb', 'period', parseInt(e.target.value))}
+                InputProps={{
+                  inputProps: { 
+                    min: 1,
+                    step: 1
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Standard Deviation"
+                type="number"
+                value={indicatorSettings.bb.std_dev}
+                onChange={(e) => handleIndicatorSettingChange('bb', 'std_dev', parseFloat(e.target.value))}
+                InputProps={{
+                  inputProps: { 
+                    min: 0.1,
+                    step: 0.1
+                  }
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Band Comparison</InputLabel>
+                <Select
+                  value={indicatorSettings.bb.comparison}
+                  onChange={(e) => handleIndicatorSettingChange('bb', 'comparison', e.target.value)}
+                  label="Band Comparison"
+                >
+                  <MenuItem value={BBComparisonType.ABOVE_UPPER}>Above Upper Band</MenuItem>
+                  <MenuItem value={BBComparisonType.BELOW_LOWER}>Below Lower Band</MenuItem>
+                  <MenuItem value={BBComparisonType.CROSS_MIDDLE_UP}>Cross Middle Band Upward</MenuItem>
+                  <MenuItem value={BBComparisonType.CROSS_MIDDLE_DOWN}>Cross Middle Band Downward</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
+  const renderADXSettings = () => {
+    if (!indicatorSettings.adx.enabled) return null;
+
+    return (
+      <Fade in={true}>
+        <Box sx={{ mt: 2, px: 3, pb: 3, backgroundColor: 'white' }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Period"
+                type="number"
+                value={indicatorSettings.adx.period}
+                onChange={(e) => handleIndicatorSettingChange('adx', 'period', parseInt(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Value"
+                type="number"
+                value={indicatorSettings.adx.value}
+                onChange={(e) => handleIndicatorSettingChange('adx', 'value', parseFloat(e.target.value))}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Comparison</InputLabel>
+                <Select
+                  value={indicatorSettings.adx.comparison}
+                  onChange={(e) => handleIndicatorSettingChange('adx', 'comparison', e.target.value)}
+                  label="Comparison"
+                >
+                  <MenuItem value={ADXComparisonType.ABOVE}>Above Value</MenuItem>
+                  <MenuItem value={ADXComparisonType.BELOW}>Below Value</MenuItem>
+                  <MenuItem value={ADXComparisonType.DI_CROSS_ABOVE}>+DI Crosses Above -DI</MenuItem>
+                  <MenuItem value={ADXComparisonType.DI_CROSS_BELOW}>+DI Crosses Below -DI</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+      </Fade>
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -648,6 +787,16 @@ const StrategyBuilder = () => {
             macd_comparison: indicatorSettings.macd.macd_comparison,
             histogram_positive: indicatorSettings.macd.histogram_positive,
             macd_signal_deviation_pct: indicatorSettings.macd.macd_signal_deviation_pct
+          } : null,
+          bb_condition: indicatorSettings.bb.enabled ? {
+            period: indicatorSettings.bb.period,
+            std_dev: indicatorSettings.bb.std_dev,
+            comparison: indicatorSettings.bb.comparison
+          } : null,
+          adx_condition: indicatorSettings.adx.enabled ? {
+            period: indicatorSettings.adx.period,
+            comparison: indicatorSettings.adx.comparison,
+            value: indicatorSettings.adx.value
           } : null
         },
         exit_conditions: {
@@ -674,7 +823,7 @@ const StrategyBuilder = () => {
           control={
             <Checkbox
               checked={indicatorSettings[type].enabled}
-              onChange={() => handleIndicatorChange(type)}
+              onChange={() => handleIndicatorToggle(type)}
               color="primary"
             />
           }
@@ -864,63 +1013,103 @@ const StrategyBuilder = () => {
             </SectionHeader>
             <Box sx={{ mb: 4 }}>
               <IndicatorCard enabled={indicatorSettings.ma.enabled}>
-                <CardContent>
+                <IndicatorCardContent>
                   <FormControlLabel
                     control={
                       <Checkbox
                         checked={indicatorSettings.ma.enabled}
-                        onChange={() => handleIndicatorChange('ma')}
+                        onChange={() => handleIndicatorToggle('ma')}
                       />
                     }
                     label={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ShowChart sx={{ mr: 1 }} />
+                        <MultilineChart sx={{ mr: 1 }} />
                         <Typography>Moving Average</Typography>
                       </Box>
                     }
                   />
-                </CardContent>
+                </IndicatorCardContent>
                 {renderMASettings()}
               </IndicatorCard>
               
               <IndicatorCard enabled={indicatorSettings.rsi.enabled}>
-                <CardContent>
+                <IndicatorCardContent>
                   <FormControlLabel
                     control={
                       <Checkbox
                         checked={indicatorSettings.rsi.enabled}
-                        onChange={() => handleIndicatorChange('rsi')}
+                        onChange={() => handleIndicatorToggle('rsi')}
                       />
                     }
                     label={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <TrendingUp sx={{ mr: 1 }} />
+                        <WaterfallChart sx={{ mr: 1 }} />
                         <Typography>Relative Strength Index (RSI)</Typography>
                       </Box>
                     }
                   />
-                </CardContent>
+                </IndicatorCardContent>
                 {renderRSISettings()}
               </IndicatorCard>
 
               <IndicatorCard enabled={indicatorSettings.macd.enabled}>
-                <CardContent>
+                <IndicatorCardContent>
                   <FormControlLabel
                     control={
                       <Checkbox
                         checked={indicatorSettings.macd.enabled}
-                        onChange={() => handleIndicatorChange('macd')}
+                        onChange={() => handleIndicatorToggle('macd')}
                       />
                     }
                     label={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ShowChart sx={{ mr: 1 }} />
-                        <Typography>Moving Average Convergence Divergence (MACD)</Typography>
+                        <SignalCellularAlt sx={{ mr: 1 }} />
+                        <Typography>MACD</Typography>
                       </Box>
                     }
                   />
-                </CardContent>
+                </IndicatorCardContent>
                 {renderMACDSettings()}
+              </IndicatorCard>
+
+              <IndicatorCard enabled={indicatorSettings.bb.enabled}>
+                <IndicatorCardContent>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={indicatorSettings.bb.enabled}
+                        onChange={() => handleIndicatorToggle('bb')}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Compress sx={{ mr: 1 }} />
+                        <Typography>Bollinger Bands</Typography>
+                      </Box>
+                    }
+                  />
+                </IndicatorCardContent>
+                {renderBBSettings()}
+              </IndicatorCard>
+
+              <IndicatorCard enabled={indicatorSettings.adx.enabled}>
+                <IndicatorCardContent>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={indicatorSettings.adx.enabled}
+                        onChange={() => handleIndicatorToggle('adx')}
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Analytics sx={{ mr: 1 }} />
+                        <Typography>Average Directional Index (ADX)</Typography>
+                      </Box>
+                    }
+                  />
+                </IndicatorCardContent>
+                {renderADXSettings()}
               </IndicatorCard>
             </Box>
           </Grid>
