@@ -63,10 +63,36 @@ class MACDCondition(BaseModel):
     histogram_positive: Optional[bool] = None  
     macd_signal_deviation_pct: Optional[float] = None 
 
+class BBComparisonType(str, Enum):
+    ABOVE_UPPER = "ABOVE_UPPER"
+    BELOW_LOWER = "BELOW_LOWER"
+    CROSS_MIDDLE_UP = "CROSS_MIDDLE_UP"
+    CROSS_MIDDLE_DOWN = "CROSS_MIDDLE_DOWN"
+
+class ADXComparisonType(str, Enum):
+    ABOVE = "ABOVE"
+    BELOW = "BELOW"
+    DI_CROSS_ABOVE = "DI_CROSS_ABOVE"
+    DI_CROSS_BELOW = "DI_CROSS_BELOW"
+
+class BBCondition(BaseModel):
+    period: int = 20
+    std_dev: float = 2.0
+    comparison: BBComparisonType
+    use_bandwidth: bool = False
+    bandwidth_threshold: Optional[float] = None
+
+class ADXCondition(BaseModel):
+    period: int = 14
+    comparison: ADXComparisonType
+    value: float = 25.0
+
 class EntryCondition(BaseModel):
     ma_condition: Optional[MACondition] = None
     rsi_condition: Optional[RSICondition] = None
-    macd_condition: Optional[MACDCondition]= None
+    macd_condition: Optional[MACDCondition] = None
+    bb_condition: Optional[BBCondition] = None
+    adx_condition: Optional[ADXCondition] = None
     trade_direction: TradeDirection
 
 class ExitCondition(BaseModel):
@@ -189,8 +215,25 @@ class BacktestService:
             if hasattr(entry_conditions.macd_condition, 'macd_signal_deviation_pct'):
                 deviation = entry_conditions.macd_condition.macd_signal_deviation_pct / 100
                 df['MACD_Signal_Deviation'] = abs(df['MACD'] - df['Signal_Line']) > (df['Signal_Line'] * deviation)
+        
+            if entry_conditions.bb_condition:
+                bb_cond = entry_conditions.bb_condition
+                bb_df = self.calculate_bollinger_bands(df, bb_cond.period, bb_cond.std_dev)
+                
+                # Add all BB indicators
+                df['BB_middle'] = bb_df['BB_middle']
+                df['BB_upper'] = bb_df['BB_upper']
+                df['BB_lower'] = bb_df['BB_lower']
+                df['BB_bandwidth'] = bb_df['BB_bandwidth']
+                df['BB_percent_b'] = bb_df['BB_percent_b']
+                df['BB_typical_price'] = bb_df['BB_typical_price']
 
-            
+            if entry_conditions.adx_condition:
+                adx_cond = entry_conditions.adx_condition
+                df['ADX'] = self.calculate_adx(df, adx_cond.period)
+                df['+DI14'] = df['+DI14']  # These are calculated in calculate_adx
+                df['-DI14'] = df['-DI14']
+
         return df
 
     def check_entry_conditions(self, row: pd.Series, prev_row: pd.Series, 
@@ -198,6 +241,8 @@ class BacktestService:
         ma_condition_met = False
         rsi_condition_met = False
         macd_condition_met = False
+        bb_condition_met = False
+        adx_condition_met = False
         
         if entry_conditions.ma_condition:
             ma_cond = entry_conditions.ma_condition
@@ -247,10 +292,39 @@ class BacktestService:
                 conditions_met.append(row['MACD_Signal_Deviation'])
 
             macd_condition_met = all(conditions_met) if conditions_met else True
+        
+            if entry_conditions.bb_condition:
+                bb_cond = entry_conditions.bb_condition
+                
+                if bb_cond.comparison == BBComparisonType.ABOVE_UPPER:
+                    bb_condition_met = row['Close'] > row['BB_upper']
+                elif bb_cond.comparison == BBComparisonType.BELOW_LOWER:
+                    bb_condition_met = row['Close'] < row['BB_lower']
+                elif bb_cond.comparison == BBComparisonType.CROSS_MIDDLE_UP:
+                    bb_condition_met = (prev_row['Close'] <= prev_row['BB_middle'] and row['Close'] > row['BB_middle'])
+                elif bb_cond.comparison == BBComparisonType.CROSS_MIDDLE_DOWN:
+                    bb_condition_met = (prev_row['Close'] >= prev_row['BB_middle'] and row['Close'] < row['BB_middle'])
+                
+                if bb_cond.use_bandwidth and bb_cond.bandwidth_threshold:
+                    bb_condition_met = bb_condition_met and (row['BB_bandwidth'] > bb_cond.bandwidth_threshold)
+
+            if entry_conditions.adx_condition:
+                adx_cond = entry_conditions.adx_condition
+                
+                if adx_cond.comparison == ADXComparisonType.ABOVE:
+                    adx_condition_met = row['ADX'] > adx_cond.value
+                elif adx_cond.comparison == ADXComparisonType.BELOW:
+                    adx_condition_met = row['ADX'] < adx_cond.value
+                elif adx_cond.comparison == ADXComparisonType.DI_CROSS_ABOVE:
+                    adx_condition_met = (prev_row['+DI14'] <= prev_row['-DI14'] and row['+DI14'] > row['-DI14'])
+                elif adx_cond.comparison == ADXComparisonType.DI_CROSS_BELOW:
+                    adx_condition_met = (prev_row['+DI14'] >= prev_row['-DI14'] and row['+DI14'] < row['-DI14'])
 
         if ((entry_conditions.ma_condition is None or ma_condition_met) and 
             (entry_conditions.rsi_condition is None or rsi_condition_met) and
-            (entry_conditions.macd_condition is None or macd_condition_met)):
+            (entry_conditions.macd_condition is None or macd_condition_met) and
+            (entry_conditions.bb_condition is None or bb_condition_met) and
+            (entry_conditions.adx_condition is None or adx_condition_met)):
             return entry_conditions.trade_direction
         
         return None
