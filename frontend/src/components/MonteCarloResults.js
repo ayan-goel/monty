@@ -1,18 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-} from '@mui/material';
-import {
-  ShowChart,
-  TrendingUp,
-  TrendingDown,
-  Analytics,
-} from '@mui/icons-material';
+import { Box, Typography, Grid, Card, CardContent } from '@mui/material';
 
 const MonteCarloResults = () => {
   const location = useLocation();
@@ -32,33 +20,29 @@ const MonteCarloResults = () => {
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Average Return
-              </Typography>
-              <Typography variant="h4">
-                {results?.avg_return?.toFixed(2)}%
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Win Rate
-              </Typography>
-              <Typography variant="h4">
-                {results?.win_rate?.toFixed(2)}%
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Add more metrics cards here */}
+        {[
+          { label: 'Average Return', value: results?.avg_return },
+          { label: 'Median Return', value: results?.median_return },
+          { label: 'Highest Return', value: results?.highest_return },
+          { label: 'Win Rate', value: results?.win_rate },
+          { label: 'Average Drawdown', value: results?.avg_drawdown },
+          { label: 'Median Drawdown', value: results?.median_drawdown },
+          { label: 'Worst Drawdown', value: results?.worst_drawdown },
+          { label: 'Successful Simulations', value: results?.successful_simulations },
+        ].map((metric, index) => (
+          <Grid item xs={12} md={3} key={index}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {metric.label}
+                </Typography>
+                <Typography variant="h4">
+                  {metric.value?.toFixed(2)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
     </Box>
   );

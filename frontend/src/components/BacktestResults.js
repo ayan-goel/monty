@@ -123,7 +123,7 @@ const BacktestResults = () => {
     };
 
     try {
-        const response = await axios.post('http://localhost:8000/monte-carlo', monteCarloParams);
+        const response = await axios.post('http://3.129.194.215:8000/monte-carlo', monteCarloParams);
         navigate('/monte-carlo-results', { 
             state: { 
                 results: response.data,
