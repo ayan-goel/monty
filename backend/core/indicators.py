@@ -155,7 +155,7 @@ class Indicators:
             df['BB_percent_b'] = bb_df['BB_percent_b']
             df['BB_typical_price'] = bb_df['BB_typical_price']
 
-            # Add BB crossover signals if needed
+            # add BB crossover signals if needed
             df['BB_Cross_Middle_Up'] = (df['Close'].shift(1) <= df['BB_middle'].shift(1)) & (df['Close'] > df['BB_middle'])
             df['BB_Cross_Middle_Down'] = (df['Close'].shift(1) >= df['BB_middle'].shift(1)) & (df['Close'] < df['BB_middle'])
             df['BB_Above_Upper'] = df['Close'] > df['BB_upper']
@@ -165,7 +165,7 @@ class Indicators:
             period = adx_condition.params.get('period', 14)
             df['ADX'] = Indicators.calculate_adx(df, period)
             
-            # Add common ADX signals
+            # add ADX signals
             df['ADX_Strong_Trend'] = df['ADX'] > 25
             df['+DI_Cross_Above'] = (df['+DI14'].shift(1) <= df['-DI14'].shift(1)) & (df['+DI14'] > df['-DI14'])
             df['-DI_Cross_Above'] = (df['+DI14'].shift(1) >= df['-DI14'].shift(1)) & (df['+DI14'] < df['-DI14'])
