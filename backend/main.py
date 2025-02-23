@@ -166,6 +166,63 @@ class BacktestService:
         elif divergence_type == 'BEARISH':
             return (price_trend > 0) & (macd_trend < 0)
         return None
+    
+    def calculate_adx(self, data: pd.DataFrame, period: int) -> pd.Series:
+        data['TR'] = np.maximum(
+            data['High'] - data['Low'],
+            np.maximum(
+                abs(data['High'] - data['Close'].shift(1)),
+                abs(data['Low'] - data['Close'].shift(1))
+            )
+        )
+
+        data['+DM'] = np.where(
+            (data['High'] - data['High'].shift(1)) > (data['Low'].shift(1) - data['Low']),
+            np.maximum(data['High'] - data['High'].shift(1), 0),
+            0
+        )
+
+        data['-DM'] = np.where(
+            (data['Low'].shift(1) - data['Low']) > (data['High'] - data['High'].shift(1)),
+            np.maximum(data['Low'].shift(1) - data['Low'], 0),
+            0
+        )
+
+        data['TR14'] = data['TR'].ewm(span=period, min_periods=period).mean()
+        data['+DM14'] = data['+DM'].ewm(span=period, min_periods=period).mean()
+        data['-DM14'] = data['-DM'].ewm(span=period, min_periods=period).mean()
+
+        data['+DI14'] = 100 * (data['+DM14'] / data['TR14'])
+        data['-DI14'] = 100 * (data['-DM14'] / data['TR14'])
+
+        data['DX'] = 100 * abs(data['+DI14'] - data['-DI14']) / (data['+DI14'] + data['-DI14'])
+        adx = data['DX'].ewm(span=period, min_periods=period).mean()
+
+        return adx
+
+    def calculate_bollinger_bands(self, data: pd.DataFrame, period: int, std_dev: float) -> pd.DataFrame:
+        middle = data['Close'].rolling(window=period).mean()
+        std = data['Close'].rolling(window=period).std()
+        upper = middle + (std * std_dev)
+        lower = middle - (std * std_dev)
+
+        # calc bandwidth (volatility indicator)
+        bandwidth = ((upper - lower) / middle) * 100
+
+        # calc %B (position within bands)
+        percent_b = (data['Close'] - lower) / (upper - lower)
+
+        # calc typical price
+        typical_price = (data['High'] + data['Low'] + data['Close']) / 3
+
+        return pd.DataFrame({
+            'BB_middle': middle,
+            'BB_upper': upper,
+            'BB_lower': lower,
+            'BB_bandwidth': bandwidth,
+            'BB_percent_b': percent_b,
+            'BB_typical_price': typical_price
+        })
 
 
     def calculate_indicators(self, df: pd.DataFrame, entry_conditions: EntryCondition) -> pd.DataFrame:
@@ -228,9 +285,8 @@ class BacktestService:
 
         if entry_conditions.adx_condition:
             adx_cond = entry_conditions.adx_condition
-            df['ADX'] = self.calculate_adx(df, adx_cond.period)
-            df['+DI14'] = df['+DI14']  # These are calculated in calculate_adx
-            df['-DI14'] = df['-DI14']
+            adx_data = self.calculate_adx(df, adx_cond.period)
+            df['ADX'] = adx_data
 
         return df
 
@@ -291,32 +347,29 @@ class BacktestService:
 
             macd_condition_met = all(conditions_met) if conditions_met else True
         
-            if entry_conditions.bb_condition:
-                bb_cond = entry_conditions.bb_condition
-                
-                if bb_cond.comparison == BBComparisonType.ABOVE_UPPER:
-                    bb_condition_met = row['Close'] > row['BB_upper']
-                elif bb_cond.comparison == BBComparisonType.BELOW_LOWER:
-                    bb_condition_met = row['Close'] < row['BB_lower']
-                elif bb_cond.comparison == BBComparisonType.CROSS_MIDDLE_UP:
-                    bb_condition_met = (prev_row['Close'] <= prev_row['BB_middle'] and row['Close'] > row['BB_middle'])
-                elif bb_cond.comparison == BBComparisonType.CROSS_MIDDLE_DOWN:
-                    bb_condition_met = (prev_row['Close'] >= prev_row['BB_middle'] and row['Close'] < row['BB_middle'])
-                
-                if bb_cond.use_bandwidth and bb_cond.bandwidth_threshold:
-                    bb_condition_met = bb_condition_met and (row['BB_bandwidth'] > bb_cond.bandwidth_threshold)
+        if entry_conditions.bb_condition:
+            bb_cond = entry_conditions.bb_condition
+            
+            if bb_cond.comparison == BBComparisonType.ABOVE_UPPER:
+                bb_condition_met = row['Close'] > row['BB_upper']
+            elif bb_cond.comparison == BBComparisonType.BELOW_LOWER:
+                bb_condition_met = row['Close'] < row['BB_lower']
+            elif bb_cond.comparison == BBComparisonType.CROSS_MIDDLE_UP:
+                bb_condition_met = (prev_row['Close'] <= prev_row['BB_middle'] and row['Close'] > row['BB_middle'])
+            elif bb_cond.comparison == BBComparisonType.CROSS_MIDDLE_DOWN:
+                bb_condition_met = (prev_row['Close'] >= prev_row['BB_middle'] and row['Close'] < row['BB_middle'])
 
-            if entry_conditions.adx_condition:
-                adx_cond = entry_conditions.adx_condition
-                
-                if adx_cond.comparison == ADXComparisonType.ABOVE:
-                    adx_condition_met = row['ADX'] > adx_cond.value
-                elif adx_cond.comparison == ADXComparisonType.BELOW:
-                    adx_condition_met = row['ADX'] < adx_cond.value
-                elif adx_cond.comparison == ADXComparisonType.DI_CROSS_ABOVE:
-                    adx_condition_met = (prev_row['+DI14'] <= prev_row['-DI14'] and row['+DI14'] > row['-DI14'])
-                elif adx_cond.comparison == ADXComparisonType.DI_CROSS_BELOW:
-                    adx_condition_met = (prev_row['+DI14'] >= prev_row['-DI14'] and row['+DI14'] < row['-DI14'])
+        if entry_conditions.adx_condition:
+            adx_cond = entry_conditions.adx_condition
+            
+            if adx_cond.comparison == ADXComparisonType.ABOVE:
+                adx_condition_met = row['ADX'] > adx_cond.value
+            elif adx_cond.comparison == ADXComparisonType.BELOW:
+                adx_condition_met = row['ADX'] < adx_cond.value
+            elif adx_cond.comparison == ADXComparisonType.DI_CROSS_ABOVE:
+                adx_condition_met = (prev_row['+DI14'] <= prev_row['-DI14'] and row['+DI14'] > row['-DI14'])
+            elif adx_cond.comparison == ADXComparisonType.DI_CROSS_BELOW:
+                adx_condition_met = (prev_row['+DI14'] >= prev_row['-DI14'] and row['+DI14'] < row['-DI14'])
 
         if ((entry_conditions.ma_condition is None or ma_condition_met) and 
             (entry_conditions.rsi_condition is None or rsi_condition_met) and
