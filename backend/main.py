@@ -10,15 +10,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.monte_carlo import MonteCarloSimulator
 from core.helpers.backtest_service import BacktestRequest
 import google.generativeai as genai
-from dotenv import load_dotenv
+import ssl
 
-load_dotenv()
 
 app = FastAPI(
     title="Monty",
     description="An integration of backtesting, forward testing, and AI portfolio management.",
     version="1.0.0"
 )
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+# /etc/letsencrypt/live/monty.sathwik.tech
+ssl_context.load_cert_chain('cert.pem', keyfile='privkey.pem')
 
 app.add_middleware(
     CORSMiddleware,
