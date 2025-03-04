@@ -75,7 +75,7 @@ const MonteCarloSimulator = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://3.129.194.215:8000/monte-carlo', simulationParams);
+      const response = await axios.post('https://monty.sathwik.tech/monte-carlo', simulationParams);
       navigate('/monte-carlo-results', { state: { results: response.data } });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';
