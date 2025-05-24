@@ -651,11 +651,53 @@ async def run_monte_carlo(request: Dict[str, Any]):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/debug-request")
+async def debug_request(request: Dict[str, Any]):
+    """Debug endpoint to see what data is being received"""
+    return {
+        "received_data": request,
+        "results_present": "results" in request,
+        "strategy_present": "strategy" in request,
+        "request_keys": list(request.keys()) if request else None
+    }
+
 @app.post("/monte-carlo-analysis")
 async def analyze_monte_carlo_results(request: Dict[str, Any]):
     try:
         results = request.get('results')
         strategy = request.get('strategy')
+        
+        # Validate that required data is present
+        if not results:
+            raise HTTPException(status_code=400, detail="Missing 'results' in request")
+        if not strategy:
+            raise HTTPException(status_code=400, detail="Missing 'strategy' in request")
+        if not isinstance(results, dict):
+            raise HTTPException(status_code=400, detail="'results' must be a dictionary")
+        if not isinstance(strategy, dict):
+            raise HTTPException(status_code=400, detail="'strategy' must be a dictionary")
+        
+        # Check for required result fields
+        required_result_fields = ['avg_return', 'median_return', 'win_rate', 'avg_drawdown', 'worst_drawdown', 'sharpe_ratio']
+        for field in required_result_fields:
+            if field not in results:
+                raise HTTPException(status_code=400, detail=f"Missing '{field}' in results")
+        
+        # Check for required strategy fields
+        if 'exit_conditions' not in strategy:
+            raise HTTPException(status_code=400, detail="Missing 'exit_conditions' in strategy")
+        if 'entry_conditions' not in strategy:
+            raise HTTPException(status_code=400, detail="Missing 'entry_conditions' in strategy")
+        
+        exit_conditions = strategy['exit_conditions']
+        if not isinstance(exit_conditions, dict):
+            raise HTTPException(status_code=400, detail="'exit_conditions' must be a dictionary")
+        
+        required_exit_fields = ['stop_loss_pct', 'take_profit_pct', 'position_size_pct']
+        for field in required_exit_fields:
+            if field not in exit_conditions:
+                raise HTTPException(status_code=400, detail=f"Missing '{field}' in exit_conditions")
+        
         genai.configure(api_key="AIzaSyBXYZL4CjM3i3yh_gpbAbSerzsK-1CcjC0")
         model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = f"""
