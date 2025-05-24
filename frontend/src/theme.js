@@ -24,7 +24,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Roboto", "Helvetica Neue", Arial, sans-serif',
     h1: {
       fontWeight: 600,
       fontSize: '2.5rem',
