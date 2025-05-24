@@ -717,16 +717,34 @@ async def analyze_monte_carlo_results(request: Dict[str, Any]):
 
         response = model.generate_content(prompt)
         print("Response generated")
+        print(f"Raw response: {response.text}")
 
         try:
             # Try to parse as JSON
             import json
-            analysis_json = json.loads(response.text)
+            import re
+            
+            # Clean the response text - remove any markdown formatting or extra text
+            response_text = response.text.strip()
+            
+            # Try to extract JSON from the response if it's wrapped in markdown or has extra text
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_text = json_match.group(0)
+            else:
+                json_text = response_text
+            
+            print(f"Attempting to parse JSON: {json_text[:200]}...")
+            analysis_json = json.loads(json_text)
+            print("JSON parsing successful")
+            
             return {
                 'analysis': analysis_json,
                 'is_structured': True
             }
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing failed: {e}")
+            print(f"Raw response text: {response.text}")
             # Fallback to text if JSON parsing fails
             return {
                 'analysis': response.text,

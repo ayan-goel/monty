@@ -150,7 +150,22 @@ const MonteCarloResults = () => {
           results,
           strategy: backtest_request,
         });
-        setAnalysis(response.data.analysis);
+        
+        console.log('Analysis response:', response.data);
+        
+        // Handle different response formats
+        let analysisData = response.data.analysis;
+        
+        // If the analysis is a string that looks like JSON, try to parse it
+        if (typeof analysisData === 'string' && analysisData.trim().startsWith('{')) {
+          try {
+            analysisData = JSON.parse(analysisData);
+          } catch (parseError) {
+            console.error('Failed to parse JSON string:', parseError);
+          }
+        }
+        
+        setAnalysis(analysisData);
       } catch (error) {
         console.error('Error fetching analysis:', error);
       } finally {
@@ -374,7 +389,7 @@ const MonteCarloResults = () => {
           >
             <TypingIndicator />
           </Box>
-        ) : analysis && typeof analysis === 'object' && analysis.overall_assessment ? (
+        ) : analysis && typeof analysis === 'object' && !Array.isArray(analysis) && analysis.overall_assessment ? (
           <Box>
             {/* Overall Assessment */}
             <SectionCard variant={analysis.overall_assessment?.rating?.toLowerCase()}>
