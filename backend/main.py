@@ -659,9 +659,47 @@ async def analyze_monte_carlo_results(request: Dict[str, Any]):
         genai.configure(api_key="AIzaSyBXYZL4CjM3i3yh_gpbAbSerzsK-1CcjC0")
         model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = f"""
-        Analyze these Monte Carlo simulation results and provide specific recommendations:
-        
-        Results:
+        Analyze these Monte Carlo simulation results and provide specific recommendations. 
+        Return your response as a valid JSON object with the following structure:
+
+        {{
+            "overall_assessment": {{
+                "rating": "Excellent|Good|Fair|Poor",
+                "summary": "2-3 sentence overall assessment"
+            }},
+            "key_insights": [
+                "insight 1",
+                "insight 2", 
+                "insight 3"
+            ],
+            "risk_management": {{
+                "current_assessment": "assessment of current risk levels",
+                "recommendations": [
+                    "specific recommendation 1",
+                    "specific recommendation 2"
+                ]
+            }},
+            "strategy_optimization": {{
+                "strengths": [
+                    "strength 1",
+                    "strength 2"
+                ],
+                "weaknesses": [
+                    "weakness 1", 
+                    "weakness 2"
+                ],
+                "improvements": [
+                    "improvement 1",
+                    "improvement 2"
+                ]
+            }},
+            "position_sizing": {{
+                "current_analysis": "analysis of current {strategy['exit_conditions']['position_size_pct']}% position size",
+                "recommendation": "recommended position size adjustment with reasoning"
+            }}
+        }}
+
+        Results to analyze:
         - Average Return: {results['avg_return']}%
         - Median Return: {results['median_return']}%
         - Win Rate: {results['win_rate']}%
@@ -673,21 +711,27 @@ async def analyze_monte_carlo_results(request: Dict[str, Any]):
         - Entry Indicators: {strategy['entry_conditions']}
         - Exit Conditions: Stop Loss {strategy['exit_conditions']['stop_loss_pct']}%, Take Profit {strategy['exit_conditions']['take_profit_pct']}%
         - Position Size: {strategy['exit_conditions']['position_size_pct']}%
-        
-        Provide targeted advice for:
-        1. Risk management adjustments
-        2. Entry/exit condition optimization
-        3. Position sizing recommendations
-        Keep feedback specific and data-driven. 
-        Don't bother sending the simulation results again since I've already displayed it myself.
+
+        Provide data-driven insights and actionable recommendations. Return ONLY the JSON object, no additional text.
         """
 
         response = model.generate_content(prompt)
         print("Response generated")
 
-        return {
-            'analysis': response.text
-        }
+        try:
+            # Try to parse as JSON
+            import json
+            analysis_json = json.loads(response.text)
+            return {
+                'analysis': analysis_json,
+                'is_structured': True
+            }
+        except json.JSONDecodeError:
+            # Fallback to text if JSON parsing fails
+            return {
+                'analysis': response.text,
+                'is_structured': False
+            }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
