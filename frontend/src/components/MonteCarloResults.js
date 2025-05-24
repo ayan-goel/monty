@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Box, Typography, Grid, Card } from '@mui/material';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Box, Typography, Grid, Card, Button } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
+import { ArrowBack } from '@mui/icons-material';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
@@ -66,6 +67,7 @@ const TypingIndicator = () => (
 );
 
 const MonteCarloResults = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const results = location.state?.results;
   const backtest_request = location.state?.backtest_request;
@@ -105,6 +107,36 @@ const MonteCarloResults = () => {
 
   return (
     <Box sx={{ p: 3 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        mb: 4 
+      }}>
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate('/results', { 
+            state: { 
+              results: location.state?.backtestResults, 
+              backtest_request: backtest_request 
+            } 
+          })}
+          variant="outlined"
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontSize: '1rem',
+            py: 1,
+            px: 2,
+            '&:hover': {
+              backgroundColor: 'rgba(33, 150, 243, 0.08)',
+            },
+          }}
+        >
+          Back to Backtest Results
+        </Button>
+      </Box>
+
       <Typography
         variant="h3"
         gutterBottom

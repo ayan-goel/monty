@@ -1,16 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Box, Grid, Typography, Card, CardContent, Button } from '@mui/material';
+import { Box, Grid, Typography, Card, CardContent, Button, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Timeline,
   Assessment,
-  Speed,
-  AttachMoney,
   ShowChart,
-  Percent,
   ArrowBack
 } from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
@@ -108,12 +103,15 @@ const BacktestResults = () => {
   const location = useLocation();
   const results = location.state?.results;
   const backtestRequest = location.state?.backtest_request;
+  const [isLoadingMonteCarlo, setIsLoadingMonteCarlo] = useState(false);
 
   const handleRunMonteCarlo = async () => {
     if (!backtestRequest) {
         console.error("Backtest request data not available for Monte Carlo simulation.");
         return;
     }
+
+    setIsLoadingMonteCarlo(true);
 
     const monteCarloParams = {
         lookback_years: 10,
@@ -127,12 +125,15 @@ const BacktestResults = () => {
         navigate('/monte-carlo-results', { 
             state: { 
                 results: response.data,
-                backtest_request: backtestRequest 
+                backtest_request: backtestRequest,
+                backtestResults: results
             } 
         });
     } catch (error) {
         console.error('Error running Monte Carlo simulation:', error.response?.data || error.message);
         alert(`Monte Carlo simulation failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+        setIsLoadingMonteCarlo(false);
     }
   };
 
@@ -192,7 +193,6 @@ const BacktestResults = () => {
           label: (context) => {
             const value = context.parsed.y;
             const percentageGain = ((value - results.initial_capital) / results.initial_capital) * 100;
-            const percentageColor = percentageGain >= 0 ? '#8cedae' : '#f58258';
             return [
               `Portfolio Value: $${value.toFixed(2)}`, 
               `Gain: ${percentageGain.toFixed(2)}%`
@@ -239,8 +239,52 @@ const BacktestResults = () => {
     },
   };
 
+  const LoadingOverlay = () => (
+    <Box
+      sx={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+      }}
+    >
+      <CircularProgress size={60} />
+      <Typography
+        variant="h6"
+        sx={{
+          mt: 2,
+          color: 'primary.main',
+          fontWeight: 600,
+          textAlign: 'center'
+        }}
+      >
+        Running Monte Carlo Simulations
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-block',
+            animation: 'ellipsis-animation 1.5s infinite',
+            '@keyframes ellipsis-animation': {
+              '0%': { content: '"."' },
+              '33%': { content: '".."' },
+              '66%': { content: '"..."' },
+            },
+          }}
+        />
+      </Typography>
+    </Box>
+  );
+
   return (
     <Box>
+      {isLoadingMonteCarlo && <LoadingOverlay />}
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -264,19 +308,24 @@ const BacktestResults = () => {
         >
           Back to Strategy Builder
         </Button>
-      </Box>
 
-      <Grid item xs={12}>
         <Button
           startIcon={<Casino />}
           variant="contained"
           color="primary"
           onClick={handleRunMonteCarlo}
-          fullWidth
+          disabled={isLoadingMonteCarlo}
+          sx={{
+            borderRadius: 2,
+            textTransform: 'none',
+            fontSize: '1rem',
+            py: 1,
+            px: 2,
+          }}
         >
-          Run Monte Carlo Simulation
+          {isLoadingMonteCarlo ? 'Running...' : 'Run Monte Carlo Simulation'}
         </Button>
-      </Grid>
+      </Box>
 
       <Box sx={{ py: 4 }}>
         <Grid container spacing={3}>
