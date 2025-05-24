@@ -570,8 +570,8 @@ async def run_monte_carlo(request: MonteCarloRequest):
             end_date=request.backtest_request.end_date,
             timeframe=request.backtest_request.timeframe,
             initial_capital=request.backtest_request.initial_capital,
-            entry_conditions=request.backtest_request.entry_conditions.model_dump(),
-            exit_conditions=request.backtest_request.exit_conditions.model_dump()
+            entry_conditions=request.backtest_request.entry_conditions.dict() if hasattr(request.backtest_request.entry_conditions, 'dict') else request.backtest_request.entry_conditions.model_dump(),
+            exit_conditions=request.backtest_request.exit_conditions.dict() if hasattr(request.backtest_request.exit_conditions, 'dict') else request.backtest_request.exit_conditions.model_dump()
         )
         
         results = simulator.run_simulations(

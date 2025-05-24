@@ -278,8 +278,8 @@ class MonteCarloSimulator:
                 end_date=simulated_data.index[-1].strftime('%Y-%m-%d'),
                 timeframe=backtest_request.timeframe,
                 initial_capital=backtest_request.initial_capital,
-                entry_conditions=backtest_request.entry_conditions.model_dump(),
-                exit_conditions=backtest_request.exit_conditions.model_dump()
+                entry_conditions=backtest_request.entry_conditions.dict() if hasattr(backtest_request.entry_conditions, 'dict') else backtest_request.entry_conditions.model_dump(),
+                exit_conditions=backtest_request.exit_conditions.dict() if hasattr(backtest_request.exit_conditions, 'dict') else backtest_request.exit_conditions.model_dump()
             )
             
             monte_carlo_backtester = MonteCarloBacktestService(debug=False)
