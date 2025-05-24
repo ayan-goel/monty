@@ -75,7 +75,7 @@ const MonteCarloResults = () => {
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
-        const response = await axios.post('https://monty.sathwik.tech/monte-carlo-analysis', {
+        const response = await axios.post('https://monty-backtester.org/monte-carlo-analysis', {
           results,
           strategy: backtest_request,
         });
