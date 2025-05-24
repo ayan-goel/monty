@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Grid, Card, CardContent, Button } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
-import { ArrowBack, TrendingUp, TrendingDown, Assessment, Speed, ShowChart, Casino, BarChart } from '@mui/icons-material';
+import { ArrowBack, TrendingUp, TrendingDown, Assessment, Speed, ShowChart, Casino, BarChart, Lightbulb, Security, Psychology, TipsAndUpdates, AccountBalance } from '@mui/icons-material';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
@@ -19,38 +19,134 @@ const AnalysisBox = styled(Card)(({ theme }) => ({
   },
 }));
 
-const SectionCard = styled(Card)(({ theme, variant }) => {
+const AnalysisCard = styled(Card)(({ theme, variant }) => {
   const getColors = () => {
     switch (variant) {
       case 'excellent':
-        return { background: '#e8f5e8', borderColor: '#4caf50', iconColor: '#4caf50' };
+        return { 
+          background: 'linear-gradient(145deg, #f8fff8 0%, #e8f5e8 100%)', 
+          borderColor: '#4caf50', 
+          iconBg: '#4caf50',
+          iconColor: '#ffffff',
+          titleColor: '#1b5e20',
+          shadowColor: 'rgba(76, 175, 80, 0.15)'
+        };
       case 'good':
-        return { background: '#e3f2fd', borderColor: '#2196f3', iconColor: '#2196f3' };
+        return { 
+          background: 'linear-gradient(145deg, #f3f8ff 0%, #e8f4fd 100%)', 
+          borderColor: '#2196f3', 
+          iconBg: '#2196f3',
+          iconColor: '#ffffff',
+          titleColor: '#0d47a1',
+          shadowColor: 'rgba(33, 150, 243, 0.15)'
+        };
       case 'fair':
-        return { background: '#fff3e0', borderColor: '#ff9800', iconColor: '#ff9800' };
+        return { 
+          background: 'linear-gradient(145deg, #fffbf5 0%, #fff3e0 100%)', 
+          borderColor: '#ff9800', 
+          iconBg: '#ff9800',
+          iconColor: '#ffffff',
+          titleColor: '#e65100',
+          shadowColor: 'rgba(255, 152, 0, 0.15)'
+        };
       case 'poor':
-        return { background: '#ffebee', borderColor: '#f44336', iconColor: '#f44336' };
+        return { 
+          background: 'linear-gradient(145deg, #fffafa 0%, #ffebee 100%)', 
+          borderColor: '#f44336', 
+          iconBg: '#f44336',
+          iconColor: '#ffffff',
+          titleColor: '#b71c1c',
+          shadowColor: 'rgba(244, 67, 54, 0.15)'
+        };
       default:
-        return { background: '#f5f5f5', borderColor: '#9e9e9e', iconColor: '#9e9e9e' };
+        return { 
+          background: 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)', 
+          borderColor: '#e2e8f0', 
+          iconBg: '#64748b',
+          iconColor: '#ffffff',
+          titleColor: '#334155',
+          shadowColor: 'rgba(100, 116, 139, 0.1)'
+        };
     }
   };
 
   const colors = getColors();
   
   return {
-    padding: theme.spacing(2),
     marginBottom: theme.spacing(2),
     background: colors.background,
     border: `2px solid ${colors.borderColor}`,
-    borderRadius: '8px',
-    '& .section-icon': {
-      color: colors.iconColor,
-      marginRight: theme.spacing(1),
+    borderRadius: '16px',
+    boxShadow: `0 6px 20px ${colors.shadowColor}`,
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden',
+    position: 'relative',
+    '&:hover': {
+      transform: 'translateY(-4px)',
+      boxShadow: `0 12px 40px ${colors.shadowColor}`,
+      borderColor: colors.iconBg,
     },
-    '& .section-title': {
-      fontWeight: 600,
-      color: colors.iconColor,
-      marginBottom: theme.spacing(1),
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: '4px',
+      background: `linear-gradient(90deg, ${colors.iconBg}, ${colors.borderColor})`,
+    },
+    '& .section-header': {
+      display: 'flex',
+      alignItems: 'center',
+      padding: theme.spacing(2.5, 3, 1.5, 3),
+      '& .section-icon-container': {
+        width: '48px',
+        height: '48px',
+        borderRadius: '12px',
+        background: colors.iconBg,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: theme.spacing(2),
+        boxShadow: `0 4px 12px rgba(0, 0, 0, 0.15)`,
+        '& .section-icon': {
+          color: colors.iconColor,
+          fontSize: '1.5rem',
+        }
+      },
+      '& .section-title': {
+        fontWeight: 700,
+        color: colors.titleColor,
+        fontSize: '1.3rem',
+        margin: 0,
+      }
+    },
+    '& .section-content': {
+      padding: theme.spacing(0, 3, 2.5, 3),
+      '& .MuiTypography-root': {
+        lineHeight: 1.5,
+        marginBottom: theme.spacing(1),
+        color: theme.palette.text.primary,
+      },
+      '& .section-subtitle': {
+        fontWeight: 600,
+        color: colors.titleColor,
+        marginBottom: theme.spacing(0.5),
+        marginTop: theme.spacing(1.5),
+        fontSize: '1rem',
+      },
+      '& ul': {
+        paddingLeft: theme.spacing(2.5),
+        margin: theme.spacing(0.5, 0),
+        '& li': {
+          marginBottom: theme.spacing(1),
+          lineHeight: 1.5,
+          color: theme.palette.text.primary,
+          '&::marker': {
+            color: colors.iconBg,
+          }
+        }
+      }
     }
   };
 });
@@ -392,120 +488,162 @@ const MonteCarloResults = () => {
         ) : analysis && typeof analysis === 'object' && !Array.isArray(analysis) && analysis.overall_assessment ? (
           <Box>
             {/* Overall Assessment */}
-            <SectionCard variant={analysis.overall_assessment?.rating?.toLowerCase()}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Assessment className="section-icon" />
-                <Typography variant="h6" className="section-title">
+            <AnalysisCard variant={analysis.overall_assessment?.rating?.toLowerCase()}>
+              <Box className="section-header">
+                <Box className="section-icon-container">
+                  <Assessment className="section-icon" />
+                </Box>
+                <Typography className="section-title">
                   Overall Assessment: {analysis.overall_assessment?.rating}
                 </Typography>
               </Box>
-              <Typography>{analysis.overall_assessment?.summary}</Typography>
-            </SectionCard>
+              <Box className="section-content">
+                <Typography variant="body1">
+                  {analysis.overall_assessment?.summary}
+                </Typography>
+              </Box>
+            </AnalysisCard>
 
             {/* Key Insights */}
             {analysis.key_insights && (
-              <SectionCard>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <ShowChart className="section-icon" />
-                  <Typography variant="h6" className="section-title">Key Insights</Typography>
+              <AnalysisCard variant="good">
+                <Box className="section-header">
+                  <Box className="section-icon-container">
+                    <Lightbulb className="section-icon" />
+                  </Box>
+                  <Typography className="section-title">Key Insights</Typography>
                 </Box>
-                <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                  {analysis.key_insights.map((insight, index) => (
-                    <Typography component="li" key={index} sx={{ mb: 0.5 }}>
-                      {insight}
-                    </Typography>
-                  ))}
+                <Box className="section-content">
+                  <Box component="ul">
+                    {analysis.key_insights.map((insight, index) => (
+                      <Typography component="li" key={index} variant="body1">
+                        {insight}
+                      </Typography>
+                    ))}
+                  </Box>
                 </Box>
-              </SectionCard>
+              </AnalysisCard>
             )}
 
             {/* Risk Management */}
             {analysis.risk_management && (
-              <SectionCard>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <TrendingDown className="section-icon" />
-                  <Typography variant="h6" className="section-title">Risk Management</Typography>
+              <AnalysisCard variant="good">
+                <Box className="section-header">
+                  <Box className="section-icon-container">
+                    <Security className="section-icon" />
+                  </Box>
+                  <Typography className="section-title">Risk Management</Typography>
                 </Box>
-                <Typography sx={{ mb: 1, fontWeight: 500 }}>Assessment:</Typography>
-                <Typography sx={{ mb: 2 }}>{analysis.risk_management.current_assessment}</Typography>
-                
-                <Typography sx={{ mb: 1, fontWeight: 500 }}>Recommendations:</Typography>
-                <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                  {analysis.risk_management.recommendations?.map((rec, index) => (
-                    <Typography component="li" key={index} sx={{ mb: 0.5 }}>
-                      {rec}
-                    </Typography>
-                  ))}
+                <Box className="section-content">
+                  <Typography className="section-subtitle">
+                    Assessment:
+                  </Typography>
+                  <Typography variant="body1">
+                    {analysis.risk_management.current_assessment}
+                  </Typography>
+                  
+                  <Typography className="section-subtitle">
+                    Recommendations:
+                  </Typography>
+                  <Box component="ul">
+                    {analysis.risk_management.recommendations?.map((rec, index) => (
+                      <Typography component="li" key={index} variant="body1">
+                        {rec}
+                      </Typography>
+                    ))}
+                  </Box>
                 </Box>
-              </SectionCard>
+              </AnalysisCard>
             )}
 
-            {/* Strategy Optimization */}
-            {analysis.strategy_optimization && (
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <SectionCard variant="good">
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <TrendingUp className="section-icon" />
-                      <Typography variant="h6" className="section-title">Strengths</Typography>
-                    </Box>
-                    <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                      {analysis.strategy_optimization.strengths?.map((strength, index) => (
-                        <Typography component="li" key={index} sx={{ mb: 0.5 }}>
-                          {strength}
-                        </Typography>
-                      ))}
-                    </Box>
-                  </SectionCard>
-                </Grid>
-                
-                <Grid item xs={12} md={6}>
-                  <SectionCard variant="fair">
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Speed className="section-icon" />
-                      <Typography variant="h6" className="section-title">Areas for Improvement</Typography>
-                    </Box>
-                    <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                      {analysis.strategy_optimization.weaknesses?.map((weakness, index) => (
-                        <Typography component="li" key={index} sx={{ mb: 0.5 }}>
-                          {weakness}
-                        </Typography>
-                      ))}
-                    </Box>
-                  </SectionCard>
-                </Grid>
-                
-                <Grid item xs={12}>
-                  <SectionCard>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <BarChart className="section-icon" />
-                      <Typography variant="h6" className="section-title">Suggested Improvements</Typography>
-                    </Box>
-                    <Box component="ul" sx={{ pl: 2, m: 0 }}>
-                      {analysis.strategy_optimization.improvements?.map((improvement, index) => (
-                        <Typography component="li" key={index} sx={{ mb: 0.5 }}>
-                          {improvement}
-                        </Typography>
-                      ))}
-                    </Box>
-                  </SectionCard>
-                </Grid>
-              </Grid>
+            {/* Strategy Strengths */}
+            {analysis.strategy_optimization?.strengths && (
+              <AnalysisCard variant="excellent">
+                <Box className="section-header">
+                  <Box className="section-icon-container">
+                    <TrendingUp className="section-icon" />
+                  </Box>
+                  <Typography className="section-title">Strategy Strengths</Typography>
+                </Box>
+                <Box className="section-content">
+                  <Box component="ul">
+                    {analysis.strategy_optimization.strengths.map((strength, index) => (
+                      <Typography component="li" key={index} variant="body1">
+                        {strength}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Box>
+              </AnalysisCard>
             )}
 
-            {/* Position Sizing */}
+            {/* Areas for Improvement */}
+            {analysis.strategy_optimization?.weaknesses && (
+              <AnalysisCard variant="fair">
+                <Box className="section-header">
+                  <Box className="section-icon-container">
+                    <Psychology className="section-icon" />
+                  </Box>
+                  <Typography className="section-title">Areas for Improvement</Typography>
+                </Box>
+                <Box className="section-content">
+                  <Box component="ul">
+                    {analysis.strategy_optimization.weaknesses.map((weakness, index) => (
+                      <Typography component="li" key={index} variant="body1">
+                        {weakness}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Box>
+              </AnalysisCard>
+            )}
+
+            {/* Suggested Improvements */}
+            {analysis.strategy_optimization?.improvements && (
+              <AnalysisCard variant="good">
+                <Box className="section-header">
+                  <Box className="section-icon-container">
+                    <TipsAndUpdates className="section-icon" />
+                  </Box>
+                  <Typography className="section-title">Suggested Improvements</Typography>
+                </Box>
+                <Box className="section-content">
+                  <Box component="ul">
+                    {analysis.strategy_optimization.improvements.map((improvement, index) => (
+                      <Typography component="li" key={index} variant="body1">
+                        {improvement}
+                      </Typography>
+                    ))}
+                  </Box>
+                </Box>
+              </AnalysisCard>
+            )}
+
+            {/* Position Sizing Analysis */}
             {analysis.position_sizing && (
-              <SectionCard>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Casino className="section-icon" />
-                  <Typography variant="h6" className="section-title">Position Sizing Analysis</Typography>
+              <AnalysisCard variant="good">
+                <Box className="section-header">
+                  <Box className="section-icon-container">
+                    <AccountBalance className="section-icon" />
+                  </Box>
+                  <Typography className="section-title">Position Sizing Analysis</Typography>
                 </Box>
-                <Typography sx={{ mb: 1, fontWeight: 500 }}>Current Analysis:</Typography>
-                <Typography sx={{ mb: 2 }}>{analysis.position_sizing.current_analysis}</Typography>
-                
-                <Typography sx={{ mb: 1, fontWeight: 500 }}>Recommendation:</Typography>
-                <Typography>{analysis.position_sizing.recommendation}</Typography>
-              </SectionCard>
+                <Box className="section-content">
+                  <Typography className="section-subtitle">
+                    Current Analysis:
+                  </Typography>
+                  <Typography variant="body1">
+                    {analysis.position_sizing.current_analysis}
+                  </Typography>
+                  
+                  <Typography className="section-subtitle">
+                    Recommendation:
+                  </Typography>
+                  <Typography variant="body1">
+                    {analysis.position_sizing.recommendation}
+                  </Typography>
+                </Box>
+              </AnalysisCard>
             )}
           </Box>
         ) : (

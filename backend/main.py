@@ -659,60 +659,73 @@ async def analyze_monte_carlo_results(request: Dict[str, Any]):
         genai.configure(api_key="AIzaSyBXYZL4CjM3i3yh_gpbAbSerzsK-1CcjC0")
         model = genai.GenerativeModel('gemini-1.5-flash')
         prompt = f"""
-        Analyze these Monte Carlo simulation results and provide specific recommendations. 
+        Analyze these Monte Carlo simulation results and provide comprehensive, detailed recommendations. 
         Return your response as a valid JSON object with the following structure:
 
         {{
             "overall_assessment": {{
                 "rating": "Excellent|Good|Fair|Poor",
-                "summary": "2-3 sentence overall assessment"
+                "summary": "Detailed 3-4 sentence overall assessment explaining the strategy's performance, key metrics, and overall viability"
             }},
             "key_insights": [
-                "insight 1",
-                "insight 2", 
-                "insight 3"
+                "Detailed insight about return patterns and distribution",
+                "Comprehensive analysis of win rate and consistency", 
+                "In-depth examination of drawdown patterns and risk exposure",
+                "Analysis of risk-adjusted returns and Sharpe ratio implications",
+                "Assessment of the strategy's robustness across different market conditions"
             ],
             "risk_management": {{
-                "current_assessment": "assessment of current risk levels",
+                "current_assessment": "Detailed assessment of current risk levels, including analysis of drawdown patterns, volatility, and risk concentration",
                 "recommendations": [
-                    "specific recommendation 1",
-                    "specific recommendation 2"
+                    "Specific recommendation with exact parameters and implementation details",
+                    "Alternative risk management approach with clear reasoning",
+                    "Advanced risk management technique with step-by-step implementation",
+                    "Portfolio-level risk management suggestion with quantitative targets"
                 ]
             }},
             "strategy_optimization": {{
                 "strengths": [
-                    "strength 1",
-                    "strength 2"
+                    "Detailed strength with supporting data and reasoning",
+                    "Another strength with quantitative evidence and market context",
+                    "Additional strength with performance metrics and stability analysis"
                 ],
                 "weaknesses": [
-                    "weakness 1", 
-                    "weakness 2"
+                    "Specific weakness with data analysis and impact assessment", 
+                    "Another weakness with root cause analysis and market implications",
+                    "Additional weakness with performance degradation details"
                 ],
                 "improvements": [
-                    "improvement 1",
-                    "improvement 2"
+                    "Detailed improvement with specific parameter adjustments, expected impact, and implementation steps",
+                    "Alternative indicator suggestion with exact settings, backtesting approach, and expected performance enhancement",
+                    "Entry timing optimization with specific techniques, signal confirmation methods, and risk reduction strategies",
+                    "Exit strategy enhancement with dynamic stop-loss techniques, profit-taking optimization, and market regime considerations",
+                    "Multi-timeframe analysis suggestion with specific timeframes, confirmation signals, and integration methods",
+                    "Risk-adjusted position sizing with volatility-based methods, Kelly criterion application, and dynamic allocation strategies",
+                    "Market regime detection with specific indicators, adaptation methods, and strategy modifications for different market conditions",
+                    "Signal filtering enhancement with additional confirmation indicators, noise reduction techniques, and false signal elimination methods"
                 ]
             }},
             "position_sizing": {{
-                "current_analysis": "analysis of current {strategy['exit_conditions']['position_size_pct']}% position size",
-                "recommendation": "recommended position size adjustment with reasoning"
+                "current_analysis": "Comprehensive analysis of the current {strategy['exit_conditions']['position_size_pct']}% position size including risk exposure, capital efficiency, drawdown impact, and portfolio-level implications",
+                "recommendation": "Detailed position sizing recommendation with specific percentage ranges, volatility-adjusted methods, Kelly criterion calculations, and dynamic sizing strategies based on market conditions and recent performance"
             }}
         }}
 
-        Results to analyze:
-        - Average Return: {results['avg_return']}%
-        - Median Return: {results['median_return']}%
-        - Win Rate: {results['win_rate']}%
-        - Average Drawdown: {results['avg_drawdown']}%
-        - Worst Drawdown: {results['worst_drawdown']}%
-        - Sharpe Ratio: {results['sharpe_ratio']}
+        Performance Metrics to Analyze:
+        - Average Return: {results['avg_return']}% (analyze distribution and consistency)
+        - Median Return: {results['median_return']}% (compare with average for skewness analysis)
+        - Win Rate: {results['win_rate']}% (assess consistency and reliability)
+        - Average Drawdown: {results['avg_drawdown']}% (typical risk exposure analysis)
+        - Worst Drawdown: {results['worst_drawdown']}% (tail risk and maximum loss potential)
+        - Sharpe Ratio: {results['sharpe_ratio']} (risk-adjusted return efficiency)
         
-        Strategy Settings:
-        - Entry Indicators: {strategy['entry_conditions']}
-        - Exit Conditions: Stop Loss {strategy['exit_conditions']['stop_loss_pct']}%, Take Profit {strategy['exit_conditions']['take_profit_pct']}%
-        - Position Size: {strategy['exit_conditions']['position_size_pct']}%
+        Current Strategy Configuration:
+        - Entry Indicators: {strategy['entry_conditions']} (analyze signal quality and timing)
+        - Stop Loss: {strategy['exit_conditions']['stop_loss_pct']}% (assess adequacy for volatility)
+        - Take Profit: {strategy['exit_conditions']['take_profit_pct']}% (evaluate profit capture efficiency)
+        - Position Size: {strategy['exit_conditions']['position_size_pct']}% (analyze risk exposure and capital allocation)
 
-        Provide data-driven insights and actionable recommendations. Return ONLY the JSON object, no additional text.
+        Provide highly detailed, actionable insights with specific parameters, implementation steps, and quantitative targets. Focus on practical improvements that can be immediately implemented and tested. Include advanced techniques and sophisticated optimization strategies. Return ONLY the JSON object, no additional text.
         """
 
         response = model.generate_content(prompt)
