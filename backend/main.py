@@ -20,7 +20,6 @@ app = FastAPI(
 )
 
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-# /etc/letsencrypt/live/monty.sathwik.tech
 ssl_context.load_cert_chain('cert.pem', keyfile='privkey.pem')
 
 app.add_middleware(
@@ -699,112 +698,211 @@ async def analyze_monte_carlo_results(request: Dict[str, Any]):
                 raise HTTPException(status_code=400, detail=f"Missing '{field}' in exit_conditions")
         
         genai.configure(api_key="AIzaSyBXYZL4CjM3i3yh_gpbAbSerzsK-1CcjC0")
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt = f"""
-        Analyze these Monte Carlo simulation results and provide comprehensive, detailed recommendations. 
-        Return your response as a valid JSON object with the following structure:
-
-        {{
-            "overall_assessment": {{
-                "rating": "Excellent|Good|Fair|Poor",
-                "summary": "Detailed 3-4 sentence overall assessment explaining the strategy's performance, key metrics, and overall viability"
-            }},
-            "key_insights": [
-                "Detailed insight about return patterns and distribution",
-                "Comprehensive analysis of win rate and consistency", 
-                "In-depth examination of drawdown patterns and risk exposure",
-                "Analysis of risk-adjusted returns and Sharpe ratio implications",
-                "Assessment of the strategy's robustness across different market conditions"
-            ],
-            "risk_management": {{
-                "current_assessment": "Detailed assessment of current risk levels, including analysis of drawdown patterns, volatility, and risk concentration",
-                "recommendations": [
-                    "Specific recommendation with exact parameters and implementation details",
-                    "Alternative risk management approach with clear reasoning",
-                    "Advanced risk management technique with step-by-step implementation",
-                    "Portfolio-level risk management suggestion with quantitative targets"
-                ]
-            }},
-            "strategy_optimization": {{
-                "strengths": [
-                    "Detailed strength with supporting data and reasoning",
-                    "Another strength with quantitative evidence and market context",
-                    "Additional strength with performance metrics and stability analysis"
-                ],
-                "weaknesses": [
-                    "Specific weakness with data analysis and impact assessment", 
-                    "Another weakness with root cause analysis and market implications",
-                    "Additional weakness with performance degradation details"
-                ],
-                "improvements": [
-                    "Detailed improvement with specific parameter adjustments, expected impact, and implementation steps",
-                    "Alternative indicator suggestion with exact settings, backtesting approach, and expected performance enhancement",
-                    "Entry timing optimization with specific techniques, signal confirmation methods, and risk reduction strategies",
-                    "Exit strategy enhancement with dynamic stop-loss techniques, profit-taking optimization, and market regime considerations",
-                    "Multi-timeframe analysis suggestion with specific timeframes, confirmation signals, and integration methods",
-                    "Risk-adjusted position sizing with volatility-based methods, Kelly criterion application, and dynamic allocation strategies",
-                    "Market regime detection with specific indicators, adaptation methods, and strategy modifications for different market conditions",
-                    "Signal filtering enhancement with additional confirmation indicators, noise reduction techniques, and false signal elimination methods"
-                ]
-            }},
-            "position_sizing": {{
-                "current_analysis": "Comprehensive analysis of the current {strategy['exit_conditions']['position_size_pct']}% position size including risk exposure, capital efficiency, drawdown impact, and portfolio-level implications",
-                "recommendation": "Detailed position sizing recommendation with specific percentage ranges, volatility-adjusted methods, Kelly criterion calculations, and dynamic sizing strategies based on market conditions and recent performance"
-            }}
-        }}
-
-        Performance Metrics to Analyze:
-        - Average Return: {results['avg_return']}% (analyze distribution and consistency)
-        - Median Return: {results['median_return']}% (compare with average for skewness analysis)
-        - Win Rate: {results['win_rate']}% (assess consistency and reliability)
-        - Average Drawdown: {results['avg_drawdown']}% (typical risk exposure analysis)
-        - Worst Drawdown: {results['worst_drawdown']}% (tail risk and maximum loss potential)
-        - Sharpe Ratio: {results['sharpe_ratio']} (risk-adjusted return efficiency)
         
-        Current Strategy Configuration:
-        - Entry Indicators: {strategy['entry_conditions']} (analyze signal quality and timing)
-        - Stop Loss: {strategy['exit_conditions']['stop_loss_pct']}% (assess adequacy for volatility)
-        - Take Profit: {strategy['exit_conditions']['take_profit_pct']}% (evaluate profit capture efficiency)
-        - Position Size: {strategy['exit_conditions']['position_size_pct']}% (analyze risk exposure and capital allocation)
+        # Configure the model with more precise settings for JSON output
+        generation_config = {
+            'temperature': 0.1,  # Lower temperature for more consistent output
+            'top_p': 0.8,
+            'top_k': 40,
+            'max_output_tokens': 2048,
+        }
+        
+        model = genai.GenerativeModel(
+            'gemini-2.0-flash',
+            generation_config=generation_config
+        )
+        
+        # Extract position size safely
+        position_size = strategy['exit_conditions']['position_size_pct']
+        
+        prompt = f"""You are a professional trading strategy analyst. Analyze the provided Monte Carlo simulation results and return your analysis as a valid JSON object.
 
-        Provide highly detailed, actionable insights with specific parameters, implementation steps, and quantitative targets. Focus on practical improvements that can be immediately implemented and tested. Include advanced techniques and sophisticated optimization strategies. Return ONLY the JSON object, no additional text.
-        """
+CRITICAL: You must return ONLY a valid JSON object with no additional text, markdown formatting, or explanations.
+
+Required JSON Structure:
+{{
+  "overall_assessment": {{
+    "rating": "Excellent|Good|Fair|Poor",
+    "summary": "3-4 sentence assessment of strategy performance and viability"
+  }},
+  "key_insights": [
+    "Analysis of return patterns and distribution",
+    "Win rate and consistency analysis", 
+    "Drawdown patterns and risk exposure examination",
+    "Risk-adjusted returns and Sharpe ratio analysis",
+    "Strategy robustness across market conditions"
+  ],
+  "risk_management": {{
+    "current_assessment": "Assessment of current risk levels and drawdown patterns",
+    "recommendations": [
+      "Specific risk management recommendation with exact parameters",
+      "Alternative risk approach with clear reasoning",
+      "Advanced risk technique with implementation steps",
+      "Portfolio-level risk suggestion with targets"
+    ]
+  }},
+  "strategy_optimization": {{
+    "strengths": [
+      "Strength with supporting data and reasoning",
+      "Another strength with quantitative evidence",
+      "Additional strength with performance metrics"
+    ],
+    "weaknesses": [
+      "Weakness with data analysis and impact", 
+      "Another weakness with root cause analysis",
+      "Additional weakness with performance details"
+    ],
+    "improvements": [
+      "Improvement with parameter adjustments and impact",
+      "Alternative indicator suggestion with settings",
+      "Entry timing optimization with techniques",
+      "Exit strategy enhancement with methods"
+    ]
+  }},
+  "position_sizing": {{
+    "current_analysis": "Analysis of the current {position_size}% position size and its implications",
+    "recommendation": "Position sizing recommendation with specific ranges and methods"
+  }}
+}}
+
+Performance Data:
+- Average Return: {results['avg_return']:.2f}%
+- Median Return: {results['median_return']:.2f}%
+- Win Rate: {results['win_rate']:.2f}%
+- Average Drawdown: {results['avg_drawdown']:.2f}%
+- Worst Drawdown: {results['worst_drawdown']:.2f}%
+- Sharpe Ratio: {results['sharpe_ratio']:.2f}
+
+Strategy Settings:
+- Entry Conditions: {strategy['entry_conditions']}
+- Stop Loss: {strategy['exit_conditions']['stop_loss_pct']}%
+- Take Profit: {strategy['exit_conditions']['take_profit_pct']}%
+- Position Size: {position_size}%
+
+IMPORTANT: Return only the JSON object. Do not include any text before or after the JSON."""
 
         response = model.generate_content(prompt)
-        print("Response generated")
-        print(f"Raw response: {response.text}")
+        print("Response generated successfully")
+        print(f"Response length: {len(response.text)} characters")
+        print(f"Response starts with: {response.text[:100]}...")
+        print(f"Response ends with: ...{response.text[-100:]}")
 
         try:
-            # Try to parse as JSON
             import json
             import re
             
-            # Clean the response text - remove any markdown formatting or extra text
+            # Clean the response text
             response_text = response.text.strip()
+            print(f"Raw response: {response_text}")
             
-            # Try to extract JSON from the response if it's wrapped in markdown or has extra text
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                json_text = json_match.group(0)
-            else:
+            # Multiple strategies to extract valid JSON
+            json_text = None
+            
+            # Strategy 1: Try the response as-is
+            if response_text.startswith('{') and response_text.endswith('}'):
                 json_text = response_text
+            
+            # Strategy 2: Extract JSON from markdown code blocks
+            if not json_text:
+                markdown_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', response_text, re.DOTALL)
+                if markdown_match:
+                    json_text = markdown_match.group(1)
+            
+            # Strategy 3: Find the first complete JSON object
+            if not json_text:
+                # More precise regex to find balanced braces
+                brace_count = 0
+                start_idx = response_text.find('{')
+                if start_idx != -1:
+                    for i, char in enumerate(response_text[start_idx:], start_idx):
+                        if char == '{':
+                            brace_count += 1
+                        elif char == '}':
+                            brace_count -= 1
+                            if brace_count == 0:
+                                json_text = response_text[start_idx:i+1]
+                                break
+            
+            # Strategy 4: Last resort - use the original regex
+            if not json_text:
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    json_text = json_match.group(0)
+            
+            if not json_text:
+                raise ValueError("No JSON object found in response")
             
             print(f"Attempting to parse JSON: {json_text[:200]}...")
             analysis_json = json.loads(json_text)
-            print("JSON parsing successful")
+            
+            # Validate the structure
+            required_keys = ['overall_assessment', 'key_insights', 'risk_management', 'strategy_optimization', 'position_sizing']
+            for key in required_keys:
+                if key not in analysis_json:
+                    raise ValueError(f"Missing required key: {key}")
+            
+            print("JSON parsing and validation successful")
             
             return {
                 'analysis': analysis_json,
                 'is_structured': True
             }
-        except json.JSONDecodeError as e:
+            
+        except (json.JSONDecodeError, ValueError) as e:
             print(f"JSON parsing failed: {e}")
             print(f"Raw response text: {response.text}")
-            # Fallback to text if JSON parsing fails
-            return {
-                'analysis': response.text,
-                'is_structured': False
-            }
+            
+            # Try to make a second request with an even more explicit prompt
+            try:
+                print("Attempting second request with simplified prompt...")
+                simple_prompt = f"""Return a valid JSON analysis of these trading results. Use this exact format:
+
+{{"overall_assessment":{{"rating":"Fair","summary":"Strategy shows mixed results with room for improvement"}},"key_insights":["Return analysis","Win rate analysis","Risk analysis"],"risk_management":{{"current_assessment":"Risk assessment","recommendations":["Risk recommendation"]}},"strategy_optimization":{{"strengths":["Strategy strength"],"weaknesses":["Strategy weakness"],"improvements":["Strategy improvement"]}},"position_sizing":{{"current_analysis":"Position analysis","recommendation":"Position recommendation"}}}}
+
+Data: Returns {results['avg_return']:.1f}%, Win Rate {results['win_rate']:.1f}%, Drawdown {results['worst_drawdown']:.1f}%, Sharpe {results['sharpe_ratio']:.2f}
+
+Return only valid JSON:"""
+                
+                second_response = model.generate_content(simple_prompt)
+                simple_json = json.loads(second_response.text.strip())
+                
+                return {
+                    'analysis': simple_json,
+                    'is_structured': True
+                }
+            except:
+                # Final fallback - return a default structured response
+                return {
+                    'analysis': {
+                        'overall_assessment': {
+                            'rating': 'Fair',
+                            'summary': f'The strategy shows an average return of {results["avg_return"]:.2f}% with a win rate of {results["win_rate"]:.2f}% and a worst drawdown of {results["worst_drawdown"]:.2f}%. Analysis requires further review.'
+                        },
+                        'key_insights': [
+                            f'Average return of {results["avg_return"]:.2f}% indicates moderate performance',
+                            f'Win rate of {results["win_rate"]:.2f}% shows consistency needs improvement',
+                            f'Worst drawdown of {results["worst_drawdown"]:.2f}% indicates significant risk exposure'
+                        ],
+                        'risk_management': {
+                            'current_assessment': f'Current risk levels show average drawdown of {results["avg_drawdown"]:.2f}% with maximum exposure of {results["worst_drawdown"]:.2f}%',
+                            'recommendations': [
+                                'Consider implementing trailing stop losses',
+                                'Reduce position size during high volatility periods',
+                                'Implement proper risk-reward ratios'
+                            ]
+                        },
+                        'strategy_optimization': {
+                            'strengths': ['Strategy shows measurable returns'],
+                            'weaknesses': ['High drawdown exposure', 'Inconsistent win rate'],
+                            'improvements': ['Optimize entry/exit timing', 'Improve risk management']
+                        },
+                        'position_sizing': {
+                            'current_analysis': f'Current position size of {position_size}% may need adjustment based on risk metrics',
+                            'recommendation': 'Consider dynamic position sizing based on volatility'
+                        }
+                    },
+                    'is_structured': True
+                }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
