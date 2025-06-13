@@ -121,7 +121,7 @@ const BacktestResults = () => {
     };
 
     try {
-        const response = await axios.post('https://monty-backtester.org/monte-carlo', monteCarloParams);
+        const response = await axios.post('https://0e56rmnbl1.execute-api.us-east-1.amazonaws.com/dev/monte-carlo', monteCarloParams);
         navigate('/monte-carlo-results', { 
             state: { 
                 results: response.data,

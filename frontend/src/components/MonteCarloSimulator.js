@@ -75,7 +75,7 @@ const MonteCarloSimulator = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('https://monty-backtester.org/monte-carlo', simulationParams);
+      const response = await axios.post('https://0e56rmnbl1.execute-api.us-east-1.amazonaws.com/dev/monte-carlo', simulationParams);
       navigate('/monte-carlo-results', { state: { results: response.data } });
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';

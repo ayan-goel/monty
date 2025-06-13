@@ -1,0 +1,67 @@
+service: monty-api
+
+provider:
+  name: aws
+  ecr:
+    images:
+      appimage:
+        path: ./
+        platform: linux/amd64
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  timeout: 900  # 15 minutes (maximum for Lambda)
+  memorySize: 3008  # Maximum memory for better performance
+  
+  # Environment variables
+  environment:
+    STAGE: ${self:provider.stage}
+    GOOGLE_API_KEY: ${env:GOOGLE_API_KEY}
+  
+  # IAM Role statements for Lambda permissions
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "arn:aws:logs:*:*:*"
+
+functions:
+  app:
+    image:
+      name: appimage
+    name: ${self:service}-${self:provider.stage}
+    description: "Monty API - Financial backtesting and analysis"
+    architecture: x86_64
+    
+    # API Gateway configuration
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors: true
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+
+# Package configuration
+package:
+  patterns:
+    - '!.venv/**'
+    - '!__pycache__/**'
+    - '!*.pyc'
+    - '!.pytest_cache/**'
+    - '!tests/**'
+    - '!cert.pem'
+    - '!privkey.pem'
+    - '!main.py'
+    - '!node_modules/**'
+    - '!.git/**'
+    - '!.env'
+
+# No plugins needed for container Lambda - dependencies built into Docker image
+
+# Clean configuration without problematic sections 

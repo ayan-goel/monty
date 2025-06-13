@@ -812,7 +812,7 @@ const StrategyBuilder = () => {
       console.log("Backtest Request Body:", requestBody);
 
       // Send backtest request to the backend
-      const response = await axios.post('https://monty-backtester.org/backtest', requestBody);
+      const response = await axios.post('https://0e56rmnbl1.execute-api.us-east-1.amazonaws.com/dev/backtest', requestBody);
       console.log("Backtest Response:", response.data);
 
       // Navigate to the results page, passing both results and the original request
